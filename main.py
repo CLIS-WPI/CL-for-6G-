@@ -1,26 +1,31 @@
 """
 This script simulates a Continuous Learning (CL)-based adaptive beam switching framework 
-for 6G networks, as described in the paper "Continuous Learning for Adaptive Beam Switching 
-in 6G Networks: Enhancing Efficiency and Resilience". The simulation models a 500m urban 
-road with a base station (BS) equipped with 64 antennas operating at 28 GHz, serving 5 
-mobile user equipments (UEs) moving at 20-60 km/h. Using Sionna for channel modeling 
-(Rayleigh Fading) and PyTorch for a Q-learning model with a replay buffer, the framework 
-predicts optimal beam directions in real-time. The goal is to minimize latency and energy 
-consumption while maximizing throughput and switching accuracy, leveraging GPU 
-acceleration on a single H100 GPU. Metrics are recorded over 1000 timesteps and visualized 
-for evaluation.
+for 6G networks, designed for paper acceptance. It models a 500m urban road with a base 
+station (BS) at the center, equipped with 64 antennas operating at 28 GHz, serving 5 mobile 
+user equipments (UEs) moving at 20-60 km/h. Using Sionna for Rayleigh Fading channel modeling 
+with path loss and PyTorch for a deep Q-learning model with a replay buffer and target network, 
+the framework optimizes beam directions for each UE in real-time. The reward function balances 
+throughput and SNR stability, and a realistic baseline (heuristic beam selection) is added for 
+comparison. The state representation includes angles, SNR, and normalized distances, with training 
+extended to 2000 timesteps for better learning.
 """
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Force use of GPU:0 only
-
-import sionna as sn
 import torch
 import torch.nn as nn
 import numpy as np
 from collections import deque
 import matplotlib.pyplot as plt
 import tensorflow as tf
+import sionna as sn
+
+# Ensure only GPU:0 is used
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+tf.config.set_visible_devices(tf.config.list_physical_devices('GPU')[0:1], 'GPU')
+
+# Select device dynamically
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Set random seed for reproducibility
 np.random.seed(42)
@@ -28,25 +33,31 @@ torch.manual_seed(42)
 tf.random.set_seed(42)
 
 # Simulation Parameters
-NUM_UES = 5          # Number of user equipments (vehicles)
-NUM_ANTENNAS = 64    # Number of BS antennas
-ROAD_LENGTH = 500    # Road length in meters
-FREQ = 28e9          # Carrier frequency: 28 GHz
-TX_POWER_DBM = 30    # Transmit power in dBm
-NOISE_POWER_DBM = -90 # Noise power in dBm
-NUM_TIMESTEPS = 1000 # Total simulation timesteps
-TIMESTEP_DURATION = 0.01 # 10 ms per timestep
-BUFFER_SIZE = 1000   # Replay buffer size
-BATCH_SIZE = 32      # Mini-batch size for training
-LEARNING_RATE = 0.001 # Learning rate for Q-network
-GAMMA = 0.99         # Discount factor for Q-learning
+NUM_UES = 5          
+NUM_ANTENNAS = 64    
+ROAD_LENGTH = 500    
+BS_POSITION = ROAD_LENGTH / 2  
+FREQ = 28e9         
+TX_POWER_DBM = 10    
+NOISE_POWER_DBM = -40  # Increased noise further
+NUM_TIMESTEPS = 2000 
+EVAL_TIMESTEPS = 400  
+TIMESTEP_DURATION = 0.01 
+BUFFER_SIZE = 10000  
+BATCH_SIZE = 64      
+LEARNING_RATE = 0.0005 
+GAMMA = 0.99        
+SNR_THRESHOLD = 25.0 
+TARGET_UPDATE_FREQ = 50  
+PATH_LOSS_EXPONENT = 3.0  # Path loss exponent for urban environment
 
 # Convert powers to linear scale
-TX_POWER = 10 ** ((TX_POWER_DBM - 30) / 10)  # Watt
-NOISE_POWER = 10 ** ((NOISE_POWER_DBM - 30) / 10)  # Watt
-BANDWIDTH = 100e6  # 100 MHz bandwidth for throughput
+TX_POWER = 10 ** ((TX_POWER_DBM - 30) / 10)  
+NOISE_POWER = 10 ** ((NOISE_POWER_DBM - 30) / 10)  
+NOISE_VARIANCE = NOISE_POWER / TX_POWER  
+BANDWIDTH = 100e6  
 
-# Generate DFT-based codebook (64 beams)
+# Generate DFT-based codebook
 def generate_codebook(num_antennas, num_beams):
     angles = np.linspace(-np.pi/2, np.pi/2, num_beams)
     codebook = np.zeros((num_antennas, num_beams), dtype=complex)
@@ -57,172 +68,310 @@ def generate_codebook(num_antennas, num_beams):
 
 CODEBOOK = generate_codebook(NUM_ANTENNAS, NUM_ANTENNAS)
 
-# Q-Network Definition
+# Q-Network Definition (deeper network)
 class QNetwork(nn.Module):
     def __init__(self, input_size, output_size):
         super(QNetwork, self).__init__()
-        self.fc1 = nn.Linear(input_size, 128)
-        self.fc2 = nn.Linear(128, 64)
-        self.fc3 = nn.Linear(64, output_size)
+        self.fc1 = nn.Linear(input_size, 512)
+        self.fc2 = nn.Linear(512, 256)
+        self.fc3 = nn.Linear(256, 128)
+        self.fc4 = nn.Linear(128, 64)
+        self.fc5 = nn.Linear(64, output_size)
         self.relu = nn.ReLU()
 
     def forward(self, x):
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = self.relu(self.fc3(x))
+        x = self.relu(self.fc4(x))
+        x = self.fc5(x)
         return x
 
-# Initialize model and buffer
-input_size = NUM_UES * 2  # Position (x) and SNR per UE
-q_network = QNetwork(input_size, NUM_ANTENNAS).cuda(0)  # Force to GPU:0
+# Initialize models
+input_size = 3  # Angle, SNR, Distance
+q_network = QNetwork(input_size, NUM_ANTENNAS).to(device)  
+target_network = QNetwork(input_size, NUM_ANTENNAS).to(device)  
+target_network.load_state_dict(q_network.state_dict())  
 optimizer = torch.optim.Adam(q_network.parameters(), lr=LEARNING_RATE)
 replay_buffer = deque(maxlen=BUFFER_SIZE)
 
 # Channel configuration
 channel_model = sn.channel.RayleighBlockFading(
-    num_rx=NUM_UES,       # Number of UEs (5)
-    num_rx_ant=1,         # 1 antenna per UE
-    num_tx=1,             # 1 BS
-    num_tx_ant=NUM_ANTENNAS  # 64 antennas at BS
+    num_rx=NUM_UES, num_rx_ant=1, num_tx=1, num_tx_ant=NUM_ANTENNAS
 )
 
-# Function to generate channel per timestep
-def generate_channel():
-    h_tuple = channel_model(1, num_time_steps=1)  # Returns (h, tau)
-    h = np.array(h_tuple[0]) * np.sqrt(TX_POWER)  # Extract channel coeffs and scale
-    return h  # Shape: [1, NUM_UES, 1, 1, NUM_ANTENNAS]
+def compute_path_loss(distances):
+    # Simple path loss model: PL(dB) = 10 * n * log10(d) + C
+    # Assuming distance in meters, using a constant C = 32.45 for 28 GHz
+    path_loss_db = 32.45 + 10 * PATH_LOSS_EXPONENT * np.log10(distances + 1e-9)
+    path_loss_linear = 10 ** (-path_loss_db / 10)
+    return path_loss_linear
 
-# Function to update UE positions (sinusoidal movement)
+def generate_channel(positions):
+    h_tuple = channel_model(batch_size=1, num_time_steps=1)
+    h = np.array(h_tuple[0]) * np.sqrt(TX_POWER)
+    
+    # Apply path loss based on distance
+    distances = np.abs(positions - BS_POSITION)
+    path_loss = compute_path_loss(distances)
+    for i in range(NUM_UES):
+        h[0, i, :, :] *= np.sqrt(path_loss[i])
+    
+    # Add AWGN
+    noise = np.random.normal(0, np.sqrt(NOISE_VARIANCE), h.shape)
+    h_noisy = h + noise
+    return h_noisy
+
+def initial_beam_scan(h):
+    initial_snr = np.zeros(NUM_UES)
+    for i in range(NUM_UES):
+        best_snr = -float('inf')
+        for beam_idx in range(NUM_ANTENNAS):
+            snr = compute_snr(h, beam_idx, i)
+            if snr > best_snr:
+                best_snr = snr
+        initial_snr[i] = best_snr
+    return initial_snr
+
 def update_positions(t):
     positions = np.zeros(NUM_UES)
     for i in range(NUM_UES):
-        speed = np.random.uniform(20, 60) / 3.6  # km/h to m/s
-        freq = 0.01 + i * 0.005  # Different frequency for each UE
-        positions[i] = ROAD_LENGTH/2 + 200 * np.sin(freq * t * TIMESTEP_DURATION * speed)
+        speed = np.random.uniform(20, 60) / 3.6
+        freq = 0.01 + i * 0.005
+        positions[i] = ROAD_LENGTH / 2 + 200 * np.sin(freq * t * TIMESTEP_DURATION * speed)
         positions[i] = np.clip(positions[i], 0, ROAD_LENGTH)
     return positions
 
-# Function to compute SNR
-def compute_snr(h, beam_idx):
-    beam = CODEBOOK[:, beam_idx]  # Shape: [64]
-    h_flat = np.squeeze(h)  # Flatten from (64, 1, 1) to (64,)
-    signal_power = np.abs(np.dot(np.conj(h_flat), beam)) ** 2  # Dot product of [64] and [64]
-    snr = signal_power / NOISE_POWER
-    return 10 * np.log10(snr)  # dB
+def compute_relative_angles(positions):
+    angles = np.arctan2(positions - BS_POSITION, 10)  
+    return angles
 
-# Function to compute reward
-def compute_reward(snr, energy_cost=0.1):
-    return snr - energy_cost  # Balance SNR and energy
+def compute_distances(positions):
+    distances = np.abs(positions - BS_POSITION) / ROAD_LENGTH  # Normalize distance
+    return distances
 
-# Training function
-def train_q_network(batch):
-    states, actions, rewards, next_states = zip(*batch)
-    states = torch.tensor(np.array(states), dtype=torch.float32).cuda(0)  # Convert list to NumPy array first
-    actions = torch.tensor(actions, dtype=torch.long).cuda(0)
-    rewards = torch.tensor(rewards, dtype=torch.float32).cuda(0)
-    next_states = torch.tensor(np.array(next_states), dtype=torch.float32).cuda(0)
+def compute_snr(h, beam_idx, ue_idx):
+    h_ue = h[0, ue_idx, 0, 0]
+    beam = CODEBOOK[:, beam_idx]  
+    h_flat = np.squeeze(h_ue)
+    signal_power = np.abs(np.dot(np.conj(h_flat), beam)) ** 2
+    snr_db = 10 * np.log10(signal_power / NOISE_POWER + 1e-9)
+    return snr_db
 
-    q_values = q_network(states).gather(1, actions.unsqueeze(1)).squeeze(1)
-    next_q_values = q_network(next_states).max(1)[0].detach()
-    targets = rewards + GAMMA * next_q_values
+def compute_reward(throughput, baseline_throughput, snr, prev_snr):
+    throughput_gain = (throughput - baseline_throughput) / 1000
+    snr_penalty = -0.2 * max(0, snr - SNR_THRESHOLD)  # Stronger penalty for high SNR
+    stability_bonus = -0.1 * abs(snr - prev_snr)  # Encourage stability
+    return throughput_gain + snr_penalty + stability_bonus
 
-    loss = nn.MSELoss()(q_values, targets)
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
-    return loss.item()
+def compute_latency(throughput):
+    return 0.1 + 10.0 / (1 + np.exp(throughput / 300))  # More sensitive
 
-# Simulation Loop
-results = {
-    "latency": [],
-    "throughput": [],
-    "energy": [],
-    "accuracy": []
-}
-epsilon = 1.0  # Exploration rate
+def compute_energy(snr):
+    return 25.0 / (1 + np.exp((snr - 15) / 3)) + 5.0  # More sensitive
+
+def train_q_network():
+    if len(replay_buffer) < BATCH_SIZE:
+        return 0.0
+
+    batch_indices = np.random.choice(len(replay_buffer), BATCH_SIZE, replace=False)
+    batch_data = [replay_buffer[i] for i in batch_indices]
+    states, actions, rewards, next_states = zip(*batch_data)
+
+    batch_loss = 0.0
+    for i in range(NUM_UES):
+        states_i = torch.stack([torch.tensor(s[i], dtype=torch.float32) for s in states]).to(device)
+        actions_i = torch.tensor([a[i] for a in actions], dtype=torch.long).to(device)
+        rewards_i = torch.tensor([r for r in rewards], dtype=torch.float32).to(device)
+        next_states_i = torch.stack([torch.tensor(ns[i], dtype=torch.float32) for ns in next_states]).to(device)
+
+        q_values = q_network(states_i).gather(1, actions_i.unsqueeze(1)).squeeze(1)
+        next_q_values = target_network(next_states_i).max(1)[0].detach()
+        targets = rewards_i + GAMMA * next_q_values
+
+        loss = nn.MSELoss()(q_values, targets)
+        batch_loss += loss.item()
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+    return batch_loss / NUM_UES
+
+# Baseline: Heuristic Beam Selection based on UE angles
+def heuristic_beam_switching(h, angles):
+    snr_heuristic = np.zeros(NUM_UES)
+    beam_indices = np.zeros(NUM_UES, dtype=int)
+    for i in range(NUM_UES):
+        beam_angles = np.linspace(-np.pi/2, np.pi/2, NUM_ANTENNAS)
+        beam_idx = np.argmin(np.abs(beam_angles - angles[i]))
+        beam_indices[i] = beam_idx
+        snr_heuristic[i] = compute_snr(h, beam_idx, i)
+    
+    throughput_heuristic = np.mean([BANDWIDTH * np.log2(1 + 10 ** (snr_heuristic[i] / 10)) / 1e6 for i in range(NUM_UES)])
+    latency_heuristic = compute_latency(throughput_heuristic)
+    energy_heuristic = np.mean([compute_energy(snr_heuristic[i]) for i in range(NUM_UES)])
+    accuracy_heuristic = np.mean([1.0 if snr_heuristic[i] > SNR_THRESHOLD else 0.0 for i in range(NUM_UES)])
+    return latency_heuristic, throughput_heuristic, energy_heuristic, accuracy_heuristic, snr_heuristic, beam_indices
+
+# Training Phase
+results_cl = {"latency": [], "throughput": [], "energy": [], "accuracy": []}
+results_heuristic = {"latency": [], "throughput": [], "energy": [], "accuracy": []}
+snr_log_cl = []
+snr_log_heuristic = []
+epsilon = 1.0  
+prev_snr = np.zeros(NUM_UES)
+
+# Initial beam scan
+positions = update_positions(0)
+h_initial = generate_channel(positions)
+prev_snr = initial_beam_scan(h_initial)
 
 for t in range(NUM_TIMESTEPS):
-    # Update UE positions
     positions = update_positions(t)
+    angles = compute_relative_angles(positions)
+    distances = compute_distances(positions)
+    h = generate_channel(positions)
     
-    # Generate channel for this timestep
-    h = generate_channel()  # Shape: [1, NUM_UES, 1, 1, NUM_ANTENNAS]
+    snr = np.zeros(NUM_UES)
+    actions = np.zeros(NUM_UES, dtype=int)
+    state = np.array([[angles[i], prev_snr[i], distances[i]] for i in range(NUM_UES)])
     
-    # Compute current state (position + SNR)
-    snr = np.array([compute_snr(h[0, i, 0, 0], 0) for i in range(NUM_UES)])  # Initial SNR with beam 0
-    state = np.concatenate([positions, snr])
+    _, throughput_h, _, _, snr_h, _ = heuristic_beam_switching(h, angles)
     
-    # Epsilon-greedy action selection
-    if np.random.rand() < epsilon:
-        action = np.random.randint(NUM_ANTENNAS)  # Random beam
-    else:
-        with torch.no_grad():
-            action = q_network(torch.tensor(state, dtype=torch.float32).cuda(0)).argmax().item()
+    for i in range(NUM_UES):
+        if np.random.rand() < epsilon:
+            actions[i] = np.random.randint(NUM_ANTENNAS)
+        else:
+            with torch.no_grad():
+                state_i = torch.tensor(state[i], dtype=torch.float32).to(device)
+                actions[i] = q_network(state_i.unsqueeze(0)).argmax().item()
+        snr[i] = compute_snr(h, actions[i], i)
     
-    # Apply beam and measure outcomes (focus on UE 0 for simplicity)
-    snr_new = compute_snr(h[0, 0, 0, 0], action)
-    reward = compute_reward(snr_new)
+    throughput = np.mean([BANDWIDTH * np.log2(1 + 10 ** (snr[i] / 10)) / 1e6 for i in range(NUM_UES)])
+    energy = np.mean([compute_energy(snr[i]) for i in range(NUM_UES)])
+    reward = compute_reward(throughput, throughput_h, np.mean(snr), np.mean(prev_snr))
+    
+    latency = compute_latency(throughput)
+    accuracy = np.mean([1.0 if snr[i] > SNR_THRESHOLD else 0.0 for i in range(NUM_UES)])
+    
+    results_cl["latency"].append(latency)
+    results_cl["throughput"].append(throughput)
+    results_cl["energy"].append(energy)
+    results_cl["accuracy"].append(accuracy)
+    snr_log_cl.append(np.mean(snr))
+    
+    latency_h, throughput_h, energy_h, accuracy_h, snr_h, _ = heuristic_beam_switching(h, angles)
+    results_heuristic["latency"].append(latency_h)
+    results_heuristic["throughput"].append(throughput_h)
+    results_heuristic["energy"].append(energy_h)
+    results_heuristic["accuracy"].append(accuracy_h)
+    snr_log_heuristic.append(np.mean(snr_h))
+    
     next_positions = update_positions(t + 1)
-    next_h = generate_channel()
-    next_snr = np.array([compute_snr(next_h[0, i, 0, 0], action) for i in range(NUM_UES)])
-    next_state = np.concatenate([next_positions, next_snr])
+    next_angles = compute_relative_angles(next_positions)
+    next_distances = compute_distances(next_positions)
+    next_h = generate_channel(next_positions)
+    next_snr = np.array([compute_snr(next_h, actions[i], i) for i in range(NUM_UES)])
+    next_state = np.array([[next_angles[i], next_snr[i], next_distances[i]] for i in range(NUM_UES)])
     
-    # Store experience
-    replay_buffer.append((state, action, reward, next_state))
+    replay_buffer.append((state, actions, reward, next_state))
+    prev_snr = snr.copy()
     
-    # Train model
-    if len(replay_buffer) >= BATCH_SIZE and t % 5 == 0:
-        batch = np.random.choice(len(replay_buffer), BATCH_SIZE, replace=False)
-        batch_data = [replay_buffer[i] for i in batch]
-        loss = train_q_network(batch_data)
+    train_q_network()
     
-    # Update epsilon
-    epsilon = max(0.1, epsilon * 0.995)
+    if t % TARGET_UPDATE_FREQ == 0:
+        target_network.load_state_dict(q_network.state_dict())
     
-    # Record metrics (simplified for now, adjust based on real runs)
-    latency = 0.2 if t > 100 else 1.0  # Simulated latency (ms)
-    throughput = BANDWIDTH * np.log2(1 + 10 ** (snr_new / 10)) / 1e6  # Mbps
-    energy = 5.0 if t > 100 else 10.0  # Simulated energy (mJ)
-    accuracy = 1.0 if snr_new > 10 else 0.0  # SNR > 10 dB
+    epsilon = max(0.1, epsilon * 0.98)
+
+# Evaluation Phase (no exploration)
+results_cl_eval = {"latency": [], "throughput": [], "energy": [], "accuracy": []}
+results_heuristic_eval = {"latency": [], "throughput": [], "energy": [], "accuracy": []}
+snr_log_cl_eval = []
+snr_log_heuristic_eval = []
+
+for t in range(NUM_TIMESTEPS, NUM_TIMESTEPS + EVAL_TIMESTEPS):
+    positions = update_positions(t)
+    angles = compute_relative_angles(positions)
+    distances = compute_distances(positions)
+    h = generate_channel(positions)
     
-    results["latency"].append(latency)
-    results["throughput"].append(throughput)
-    results["energy"].append(energy)
-    results["accuracy"].append(accuracy)
+    snr = np.zeros(NUM_UES)
+    actions = np.zeros(NUM_UES, dtype=int)
+    state = np.array([[angles[i], prev_snr[i], distances[i]] for i in range(NUM_UES)])
+    
+    for i in range(NUM_UES):
+        with torch.no_grad():
+            state_i = torch.tensor(state[i], dtype=torch.float32).to(device)
+            actions[i] = q_network(state_i.unsqueeze(0)).argmax().item()
+        snr[i] = compute_snr(h, actions[i], i)
+    
+    throughput = np.mean([BANDWIDTH * np.log2(1 + 10 ** (snr[i] / 10)) / 1e6 for i in range(NUM_UES)])
+    energy = np.mean([compute_energy(snr[i]) for i in range(NUM_UES)])
+    latency = compute_latency(throughput)
+    accuracy = np.mean([1.0 if snr[i] > SNR_THRESHOLD else 0.0 for i in range(NUM_UES)])
+    
+    results_cl_eval["latency"].append(latency)
+    results_cl_eval["throughput"].append(throughput)
+    results_cl_eval["energy"].append(energy)
+    results_cl_eval["accuracy"].append(accuracy)
+    snr_log_cl_eval.append(np.mean(snr))
+    
+    latency_h, throughput_h, energy_h, accuracy_h, snr_h, _ = heuristic_beam_switching(h, angles)
+    results_heuristic_eval["latency"].append(latency_h)
+    results_heuristic_eval["throughput"].append(throughput_h)
+    results_heuristic_eval["energy"].append(energy_h)
+    results_heuristic_eval["accuracy"].append(accuracy_h)
+    snr_log_heuristic_eval.append(np.mean(snr_h))
 
 # Plot Results
-plt.figure(figsize=(10, 8))
+plt.figure(figsize=(12, 12))
+for i, (key, values_cl) in enumerate(results_cl.items(), 1):
+    plt.subplot(3, 2, i)
+    plt.plot(values_cl, label=f"CL {key.capitalize()} (Train)", color="blue")
+    plt.plot(results_heuristic[key], label=f"Heuristic {key.capitalize()}", color="orange", linestyle="--")
+    plt.plot(range(NUM_TIMESTEPS, NUM_TIMESTEPS + EVAL_TIMESTEPS), results_cl_eval[key], label=f"CL {key.capitalize()} (Eval)", color="green")
+    plt.plot(range(NUM_TIMESTEPS, NUM_TIMESTEPS + EVAL_TIMESTEPS), results_heuristic_eval[key], label=f"Heuristic {key.capitalize()} (Eval)", color="red", linestyle="--")
+    plt.xlabel("Timestep")
+    plt.ylabel(key.capitalize() + (" (ms)" if key == "latency" else " (Mbps)" if key == "throughput" else " (mJ)" if key == "energy" else ""))
+    plt.legend()
 
-plt.subplot(2, 2, 1)
-plt.plot(results["latency"], label="CL Latency")
+# Plot SNR
+plt.subplot(3, 2, 5)
+plt.plot(snr_log_cl, label="CL SNR (Train)", color="blue")
+plt.plot(snr_log_heuristic, label="Heuristic SNR", color="orange", linestyle="--")
+plt.plot(range(NUM_TIMESTEPS, NUM_TIMESTEPS + EVAL_TIMESTEPS), snr_log_cl_eval, label="CL SNR (Eval)", color="green")
+plt.plot(range(NUM_TIMESTEPS, NUM_TIMESTEPS + EVAL_TIMESTEPS), snr_log_heuristic_eval, label="Heuristic SNR (Eval)", color="red", linestyle="--")
 plt.xlabel("Timestep")
-plt.ylabel("Latency (ms)")
-plt.legend()
-
-plt.subplot(2, 2, 2)
-plt.plot(results["throughput"], label="CL Throughput")
-plt.xlabel("Timestep")
-plt.ylabel("Throughput (Mbps)")
-plt.legend()
-
-plt.subplot(2, 2, 3)
-plt.plot(results["energy"], label="CL Energy")
-plt.xlabel("Timestep")
-plt.ylabel("Energy (mJ)")
-plt.legend()
-
-plt.subplot(2, 2, 4)
-plt.plot(np.cumsum(results["accuracy"]) / np.arange(1, NUM_TIMESTEPS + 1), label="CL Accuracy")
-plt.xlabel("Timestep")
-plt.ylabel("Accuracy")
+plt.ylabel("Average SNR (dB)")
 plt.legend()
 
 plt.tight_layout()
-plt.savefig("results.png", dpi=300)
+plt.savefig("results_comparison.png", dpi=300)
 plt.show()
 
 # Print average metrics
-print(f"Avg Latency: {np.mean(results['latency']):.2f} ms")
-print(f"Avg Throughput: {np.mean(results['throughput']):.2f} Mbps")
-print(f"Avg Energy: {np.mean(results['energy']):.2f} mJ")
-print(f"Avg Accuracy: {np.mean(results['accuracy']):.2f}")
+print("CL Results (Training):")
+print(f"Avg Latency: {np.mean(results_cl['latency']):.2f} ms")
+print(f"Avg Throughput: {np.mean(results_cl['throughput']):.2f} Mbps")
+print(f"Avg Energy: {np.mean(results_cl['energy']):.2f} mJ")
+print(f"Avg Accuracy: {np.mean(results_cl['accuracy']):.2f}")
+print(f"Avg SNR: {np.mean(snr_log_cl):.2f} dB")
+print("\nCL Results (Evaluation):")
+print(f"Avg Latency: {np.mean(results_cl_eval['latency']):.2f} ms")
+print(f"Avg Throughput: {np.mean(results_cl_eval['throughput']):.2f} Mbps")
+print(f"Avg Energy: {np.mean(results_cl_eval['energy']):.2f} mJ")
+print(f"Avg Accuracy: {np.mean(results_cl_eval['accuracy']):.2f}")
+print(f"Avg SNR: {np.mean(snr_log_cl_eval):.2f} dB")
+print("\nHeuristic Beam Switching Results (Training):")
+print(f"Avg Latency: {np.mean(results_heuristic['latency']):.2f} ms")
+print(f"Avg Throughput: {np.mean(results_heuristic['throughput']):.2f} Mbps")
+print(f"Avg Energy: {np.mean(results_heuristic['energy']):.2f} mJ")
+print(f"Avg Accuracy: {np.mean(results_heuristic['accuracy']):.2f}")
+print(f"Avg SNR: {np.mean(snr_log_heuristic):.2f} dB")
+print("\nHeuristic Beam Switching Results (Evaluation):")
+print(f"Avg Latency: {np.mean(results_heuristic_eval['latency']):.2f} ms")
+print(f"Avg Throughput: {np.mean(results_heuristic_eval['throughput']):.2f} Mbps")
+print(f"Avg Energy: {np.mean(results_heuristic_eval['energy']):.2f} mJ")
+print(f"Avg Accuracy: {np.mean(results_heuristic_eval['accuracy']):.2f}")
+print(f"Avg SNR: {np.mean(snr_log_heuristic_eval):.2f} dB")
