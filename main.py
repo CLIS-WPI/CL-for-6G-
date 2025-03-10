@@ -7,19 +7,25 @@ mobile user equipments (UEs) moving at 20-60 km/h. Using Sionna for channel mode
 (Rayleigh Fading) and PyTorch for a Q-learning model with a replay buffer, the framework 
 predicts optimal beam directions in real-time. The goal is to minimize latency and energy 
 consumption while maximizing throughput and switching accuracy, leveraging GPU 
-acceleration (e.g., dual H100). Metrics are recorded over 1000 timesteps and visualized 
+acceleration on a single H100 GPU. Metrics are recorded over 1000 timesteps and visualized 
 for evaluation.
 """
+
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Force use of GPU:0 only
+
 import sionna as sn
 import torch
 import torch.nn as nn
 import numpy as np
 from collections import deque
 import matplotlib.pyplot as plt
+import tensorflow as tf
 
 # Set random seed for reproducibility
 np.random.seed(42)
 torch.manual_seed(42)
+tf.random.set_seed(42)
 
 # Simulation Parameters
 NUM_UES = 5          # Number of user equipments (vehicles)
@@ -66,16 +72,25 @@ class QNetwork(nn.Module):
         x = self.fc3(x)
         return x
 
-# Initialize channel, model, and buffer
-channel = sn.channel.RayleighBlockFading(
-    num_rx=NUM_UES,
-    num_tx_ant=NUM_ANTENNAS,
-    num_time_steps=1  # Generate new channel per timestep
-)
+# Initialize model and buffer
 input_size = NUM_UES * 2  # Position (x) and SNR per UE
-q_network = QNetwork(input_size, NUM_ANTENNAS).cuda()  # Move to GPU
+q_network = QNetwork(input_size, NUM_ANTENNAS).cuda(0)  # Force to GPU:0
 optimizer = torch.optim.Adam(q_network.parameters(), lr=LEARNING_RATE)
 replay_buffer = deque(maxlen=BUFFER_SIZE)
+
+# Channel configuration
+channel_model = sn.channel.RayleighBlockFading(
+    num_rx=NUM_UES,       # Number of UEs (5)
+    num_rx_ant=1,         # 1 antenna per UE
+    num_tx=1,             # 1 BS
+    num_tx_ant=NUM_ANTENNAS  # 64 antennas at BS
+)
+
+# Function to generate channel per timestep
+def generate_channel():
+    h_tuple = channel_model(1, num_time_steps=1)  # Returns (h, tau)
+    h = np.array(h_tuple[0]) * np.sqrt(TX_POWER)  # Extract channel coeffs and scale
+    return h  # Shape: [1, NUM_UES, 1, 1, NUM_ANTENNAS]
 
 # Function to update UE positions (sinusoidal movement)
 def update_positions(t):
@@ -89,8 +104,9 @@ def update_positions(t):
 
 # Function to compute SNR
 def compute_snr(h, beam_idx):
-    beam = CODEBOOK[:, beam_idx]  # Select beam from codebook
-    signal_power = np.abs(np.conj(h) @ beam) ** 2
+    beam = CODEBOOK[:, beam_idx]  # Shape: [64]
+    h_flat = np.squeeze(h)  # Flatten from (64, 1, 1) to (64,)
+    signal_power = np.abs(np.dot(np.conj(h_flat), beam)) ** 2  # Dot product of [64] and [64]
     snr = signal_power / NOISE_POWER
     return 10 * np.log10(snr)  # dB
 
@@ -101,10 +117,10 @@ def compute_reward(snr, energy_cost=0.1):
 # Training function
 def train_q_network(batch):
     states, actions, rewards, next_states = zip(*batch)
-    states = torch.tensor(states, dtype=torch.float32).cuda()
-    actions = torch.tensor(actions, dtype=torch.long).cuda()
-    rewards = torch.tensor(rewards, dtype=torch.float32).cuda()
-    next_states = torch.tensor(next_states, dtype=torch.float32).cuda()
+    states = torch.tensor(np.array(states), dtype=torch.float32).cuda(0)  # Convert list to NumPy array first
+    actions = torch.tensor(actions, dtype=torch.long).cuda(0)
+    rewards = torch.tensor(rewards, dtype=torch.float32).cuda(0)
+    next_states = torch.tensor(np.array(next_states), dtype=torch.float32).cuda(0)
 
     q_values = q_network(states).gather(1, actions.unsqueeze(1)).squeeze(1)
     next_q_values = q_network(next_states).max(1)[0].detach()
@@ -129,11 +145,11 @@ for t in range(NUM_TIMESTEPS):
     # Update UE positions
     positions = update_positions(t)
     
-    # Generate channel
-    h = channel(TX_POWER)  # Channel coefficients
+    # Generate channel for this timestep
+    h = generate_channel()  # Shape: [1, NUM_UES, 1, 1, NUM_ANTENNAS]
     
     # Compute current state (position + SNR)
-    snr = np.array([compute_snr(h[0, i], 0) for i in range(NUM_UES)])  # Initial SNR with beam 0
+    snr = np.array([compute_snr(h[0, i, 0, 0], 0) for i in range(NUM_UES)])  # Initial SNR with beam 0
     state = np.concatenate([positions, snr])
     
     # Epsilon-greedy action selection
@@ -141,13 +157,14 @@ for t in range(NUM_TIMESTEPS):
         action = np.random.randint(NUM_ANTENNAS)  # Random beam
     else:
         with torch.no_grad():
-            action = q_network(torch.tensor(state, dtype=torch.float32).cuda()).argmax().item()
+            action = q_network(torch.tensor(state, dtype=torch.float32).cuda(0)).argmax().item()
     
-    # Apply beam and measure outcomes
-    snr_new = compute_snr(h[0, 0], action)  # SNR for UE 0 (example)
+    # Apply beam and measure outcomes (focus on UE 0 for simplicity)
+    snr_new = compute_snr(h[0, 0, 0, 0], action)
     reward = compute_reward(snr_new)
     next_positions = update_positions(t + 1)
-    next_snr = np.array([compute_snr(h[0, i], action) for i in range(NUM_UES)])
+    next_h = generate_channel()
+    next_snr = np.array([compute_snr(next_h[0, i, 0, 0], action) for i in range(NUM_UES)])
     next_state = np.concatenate([next_positions, next_snr])
     
     # Store experience
@@ -162,7 +179,7 @@ for t in range(NUM_TIMESTEPS):
     # Update epsilon
     epsilon = max(0.1, epsilon * 0.995)
     
-    # Record metrics
+    # Record metrics (simplified for now, adjust based on real runs)
     latency = 0.2 if t > 100 else 1.0  # Simulated latency (ms)
     throughput = BANDWIDTH * np.log2(1 + 10 ** (snr_new / 10)) / 1e6  # Mbps
     energy = 5.0 if t > 100 else 10.0  # Simulated energy (mJ)
