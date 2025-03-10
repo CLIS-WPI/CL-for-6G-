@@ -1,3 +1,15 @@
+"""
+This script simulates a Continuous Learning (CL)-based adaptive beam switching framework 
+for 6G networks, as described in the paper "Continuous Learning for Adaptive Beam Switching 
+in 6G Networks: Enhancing Efficiency and Resilience". The simulation models a 500m urban 
+road with a base station (BS) equipped with 64 antennas operating at 28 GHz, serving 5 
+mobile user equipments (UEs) moving at 20-60 km/h. Using Sionna for channel modeling 
+(Rayleigh Fading) and PyTorch for a Q-learning model with a replay buffer, the framework 
+predicts optimal beam directions in real-time. The goal is to minimize latency and energy 
+consumption while maximizing throughput and switching accuracy, leveraging GPU 
+acceleration (e.g., dual H100). Metrics are recorded over 1000 timesteps and visualized 
+for evaluation.
+"""
 import sionna as sn
 import torch
 import torch.nn as nn
