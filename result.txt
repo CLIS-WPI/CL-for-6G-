@@ -1,85 +1,85 @@
 python3 main.py
-2025-04-18 16:57:26.294974: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
-2025-04-18 16:57:26.295035: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
-2025-04-18 16:57:26.296272: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
-2025-04-18 16:57:26.302037: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+2025-04-18 17:19:27.177061: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2025-04-18 17:19:27.177123: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-04-18 17:19:27.178340: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2025-04-18 17:19:27.183763: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: AVX2 AVX512F AVX512_VNNI AVX512_BF16 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2025-04-18 16:57:26.845096: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
-2025-04-18 16:57:27.949012: W tensorflow/core/common_runtime/gpu/gpu_device.cc:2348] TensorFlow was not built with CUDA kernel binaries compatible with compute capability 9.0. CUDA kernels will be jit-compiled from PTX, which could take 30 minutes or longer.
-2025-04-18 16:57:27.954819: W tensorflow/core/common_runtime/gpu/gpu_device.cc:2348] TensorFlow was not built with CUDA kernel binaries compatible with compute capability 9.0. CUDA kernels will be jit-compiled from PTX, which could take 30 minutes or longer.
+2025-04-18 17:19:27.724167: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+2025-04-18 17:19:28.897675: W tensorflow/core/common_runtime/gpu/gpu_device.cc:2348] TensorFlow was not built with CUDA kernel binaries compatible with compute capability 9.0. CUDA kernels will be jit-compiled from PTX, which could take 30 minutes or longer.
+2025-04-18 17:19:28.903398: W tensorflow/core/common_runtime/gpu/gpu_device.cc:2348] TensorFlow was not built with CUDA kernel binaries compatible with compute capability 9.0. CUDA kernels will be jit-compiled from PTX, which could take 30 minutes or longer.
 Using GPU: PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')
 Using PyTorch device: cuda
 --- Starting Training Phase ---
-2025-04-18 16:57:29.540419: W tensorflow/core/common_runtime/gpu/gpu_device.cc:2348] TensorFlow was not built with CUDA kernel binaries compatible with compute capability 9.0. CUDA kernels will be jit-compiled from PTX, which could take 30 minutes or longer.
-2025-04-18 16:57:29.544123: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1929] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 92955 MB memory:  -> device: 0, name: NVIDIA H100 NVL, pci bus id: 0000:43:00.0, compute capability: 9.0
+2025-04-18 17:19:30.496716: W tensorflow/core/common_runtime/gpu/gpu_device.cc:2348] TensorFlow was not built with CUDA kernel binaries compatible with compute capability 9.0. CUDA kernels will be jit-compiled from PTX, which could take 30 minutes or longer.
+2025-04-18 17:19:30.500499: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1929] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 92955 MB memory:  -> device: 0, name: NVIDIA H100 NVL, pci bus id: 0000:43:00.0, compute capability: 9.0
 Initial Avg SNR from Scan: 50.00 dB
-Training Timestep: 200/4000, Epsilon: 0.819, AvgLoss: 1.5458, AvgSNR CL: 43.41 dB
-Training Timestep: 400/4000, Epsilon: 0.670, AvgLoss: 3.9409, AvgSNR CL: 34.53 dB
-Training Timestep: 600/4000, Epsilon: 0.549, AvgLoss: 14.1048, AvgSNR CL: 31.11 dB
-Training Timestep: 800/4000, Epsilon: 0.449, AvgLoss: 27.7948, AvgSNR CL: 28.26 dB
-Training Timestep: 1000/4000, Epsilon: 0.368, AvgLoss: 38.3811, AvgSNR CL: 26.44 dB
-Training Timestep: 1200/4000, Epsilon: 0.301, AvgLoss: 42.1127, AvgSNR CL: 21.85 dB
-Training Timestep: 1400/4000, Epsilon: 0.246, AvgLoss: 40.2423, AvgSNR CL: 18.97 dB
-Training Timestep: 1600/4000, Epsilon: 0.202, AvgLoss: 43.1699, AvgSNR CL: 22.22 dB
-Training Timestep: 1800/4000, Epsilon: 0.165, AvgLoss: 38.5275, AvgSNR CL: 19.82 dB
-Training Timestep: 2000/4000, Epsilon: 0.135, AvgLoss: 36.5497, AvgSNR CL: 20.82 dB
-Training Timestep: 2200/4000, Epsilon: 0.111, AvgLoss: 24.0456, AvgSNR CL: 18.70 dB
-Training Timestep: 2400/4000, Epsilon: 0.100, AvgLoss: 28.0531, AvgSNR CL: 17.10 dB
-Training Timestep: 2600/4000, Epsilon: 0.100, AvgLoss: 29.8690, AvgSNR CL: 17.78 dB
-Training Timestep: 2800/4000, Epsilon: 0.100, AvgLoss: 15.7246, AvgSNR CL: 15.98 dB
-Training Timestep: 3000/4000, Epsilon: 0.100, AvgLoss: 23.2302, AvgSNR CL: 16.73 dB
-Training Timestep: 3200/4000, Epsilon: 0.100, AvgLoss: 20.1481, AvgSNR CL: 11.49 dB
-Training Timestep: 3400/4000, Epsilon: 0.100, AvgLoss: 15.1840, AvgSNR CL: 16.00 dB
-Training Timestep: 3600/4000, Epsilon: 0.100, AvgLoss: 18.0739, AvgSNR CL: 9.89 dB
-Training Timestep: 3800/4000, Epsilon: 0.100, AvgLoss: 12.1004, AvgSNR CL: 14.52 dB
-Training Timestep: 4000/4000, Epsilon: 0.100, AvgLoss: 12.3106, AvgSNR CL: 10.60 dB
+Training Timestep: 200/4000, Epsilon: 0.819, AvgLoss: 1.4472, AvgSNR CL: 45.25 dB
+Training Timestep: 400/4000, Epsilon: 0.670, AvgLoss: 3.9684, AvgSNR CL: 35.38 dB
+Training Timestep: 600/4000, Epsilon: 0.549, AvgLoss: 16.9158, AvgSNR CL: 33.34 dB
+Training Timestep: 800/4000, Epsilon: 0.449, AvgLoss: 26.8334, AvgSNR CL: 28.01 dB
+Training Timestep: 1000/4000, Epsilon: 0.368, AvgLoss: 44.2589, AvgSNR CL: 27.68 dB
+Training Timestep: 1200/4000, Epsilon: 0.301, AvgLoss: 57.3749, AvgSNR CL: 23.97 dB
+Training Timestep: 1400/4000, Epsilon: 0.246, AvgLoss: 69.4597, AvgSNR CL: 21.34 dB
+Training Timestep: 1600/4000, Epsilon: 0.202, AvgLoss: 43.5646, AvgSNR CL: 20.70 dB
+Training Timestep: 1800/4000, Epsilon: 0.165, AvgLoss: 32.8339, AvgSNR CL: 13.40 dB
+Training Timestep: 2000/4000, Epsilon: 0.135, AvgLoss: 25.1428, AvgSNR CL: 16.63 dB
+Training Timestep: 2200/4000, Epsilon: 0.111, AvgLoss: 19.8018, AvgSNR CL: 19.71 dB
+Training Timestep: 2400/4000, Epsilon: 0.100, AvgLoss: 23.1808, AvgSNR CL: 19.24 dB
+Training Timestep: 2600/4000, Epsilon: 0.100, AvgLoss: 19.7681, AvgSNR CL: 20.53 dB
+Training Timestep: 2800/4000, Epsilon: 0.100, AvgLoss: 12.4944, AvgSNR CL: 18.51 dB
+Training Timestep: 3000/4000, Epsilon: 0.100, AvgLoss: 13.8059, AvgSNR CL: 14.62 dB
+Training Timestep: 3200/4000, Epsilon: 0.100, AvgLoss: 12.8845, AvgSNR CL: 15.54 dB
+Training Timestep: 3400/4000, Epsilon: 0.100, AvgLoss: 26.0227, AvgSNR CL: 9.35 dB
+Training Timestep: 3600/4000, Epsilon: 0.100, AvgLoss: 17.4038, AvgSNR CL: 13.24 dB
+Training Timestep: 3800/4000, Epsilon: 0.100, AvgLoss: 10.9286, AvgSNR CL: 13.64 dB
+Training Timestep: 4000/4000, Epsilon: 0.100, AvgLoss: 12.2008, AvgSNR CL: 12.10 dB
 --- Training Phase Completed ---
 --- Starting Evaluation Phase ---
-Evaluation Timestep: 100/400, AvgSNR CL: 8.48 dB
-Evaluation Timestep: 200/400, AvgSNR CL: 15.15 dB
-Evaluation Timestep: 300/400, AvgSNR CL: 14.37 dB
-Evaluation Timestep: 400/400, AvgSNR CL: 14.87 dB
+Evaluation Timestep: 100/400, AvgSNR CL: 14.17 dB
+Evaluation Timestep: 200/400, AvgSNR CL: 12.58 dB
+Evaluation Timestep: 300/400, AvgSNR CL: 10.74 dB
+Evaluation Timestep: 400/400, AvgSNR CL: 9.43 dB
 --- Evaluation Phase Completed ---
 --- Plotting Results ---
 Results plot saved to results_comparison_correlated_blockage.png
 
 --- Average Metrics ---
 CL Results (Training):
-  Avg Latency:    1.30 ms
-  Avg Throughput: 727.06 Mbps
-  Avg Energy:     6.50 mJ
-  Avg Accuracy:   0.74
-  Avg SNR:        21.62 dB
-CL Results (Evaluation):
-  Avg Latency:    2.88 ms
-  Avg Throughput: 410.43 Mbps
-  Avg Energy:     6.40 mJ
-  Avg Accuracy:   0.36
-  Avg SNR:        11.69 dB
-Angle Heuristic Results (Training):
-  Avg Latency:    1.75 ms
-  Avg Throughput: 643.58 Mbps
-  Avg Energy:     6.16 mJ
-  Avg Accuracy:   0.65
-  Avg SNR:        18.06 dB
-Angle Heuristic Results (Evaluation):
-  Avg Latency:    3.55 ms
-  Avg Throughput: 346.24 Mbps
-  Avg Energy:     6.07 mJ
-  Avg Accuracy:   0.31
-  Avg SNR:        7.72 dB
-MAB UCB1 Results (Training):
   Avg Latency:    1.29 ms
-  Avg Throughput: 728.09 Mbps
+  Avg Throughput: 728.23 Mbps
   Avg Energy:     6.51 mJ
   Avg Accuracy:   0.75
-  Avg SNR:        21.64 dB
+  Avg SNR:        21.65 dB
+CL Results (Evaluation):
+  Avg Latency:    2.75 ms
+  Avg Throughput: 421.70 Mbps
+  Avg Energy:     6.45 mJ
+  Avg Accuracy:   0.39
+  Avg SNR:        12.06 dB
+Angle Heuristic Results (Training):
+  Avg Latency:    1.81 ms
+  Avg Throughput: 633.46 Mbps
+  Avg Energy:     6.12 mJ
+  Avg Accuracy:   0.64
+  Avg SNR:        17.57 dB
+Angle Heuristic Results (Evaluation):
+  Avg Latency:    3.67 ms
+  Avg Throughput: 335.04 Mbps
+  Avg Energy:     6.01 mJ
+  Avg Accuracy:   0.29
+  Avg SNR:        6.94 dB
+MAB UCB1 Results (Training):
+  Avg Latency:    1.29 ms
+  Avg Throughput: 727.13 Mbps
+  Avg Energy:     6.50 mJ
+  Avg Accuracy:   0.75
+  Avg SNR:        21.62 dB
 MAB UCB1 Results (Evaluation):
-  Avg Latency:    2.93 ms
-  Avg Throughput: 406.11 Mbps
-  Avg Energy:     6.37 mJ
+  Avg Latency:    2.85 ms
+  Avg Throughput: 413.04 Mbps
+  Avg Energy:     6.41 mJ
   Avg Accuracy:   0.37
-  Avg SNR:        11.46 dB
+  Avg SNR:        11.78 dB
 
 --- Script Finished ---
 (beam_switching) tanglab@GPU-server:~/Desktop/CL-for-6G-$ ^C

@@ -1,15 +1,3 @@
-"""
-This script simulates a Online Learning (OL)-based adaptive beam switching framework 
-for 6G networks, designed for paper acceptance. It models a 500m urban road with a base 
-station (BS) at the center, equipped with 64 antennas operating at 28 GHz, serving 5 mobile 
-user equipments (UEs) moving at 20-60 km/h. Using Sionna for Rayleigh Fading channel modeling 
-with path loss and PyTorch for a deep Q-learning model with a replay buffer and target network, 
-the framework optimizes beam directions for each UE in real-time. The reward function balances 
-throughput, SNR stability, and energy efficiency with optimized weights, and a realistic baseline 
-(heuristic beam selection) is added for comparison. The state representation includes angles, 
-SNR, and normalized distances, with training set to 4000 timesteps for optimal learning.
-"""
-
 import os
 import torch
 import torch.nn as nn
@@ -73,12 +61,9 @@ PATH_LOSS_EXPONENT = 2.5
 MAB_EXPLORATION_FACTOR = 2.0
 
 # --- Time-Correlated Blockage Model Parameters ---
-# BLOCKAGE_PROBABILITY = 0.10 # Removed
 BLOCKAGE_ATTENUATION_DB = 25.0 # Keep attenuation level
-P_BB = 0.70 # Probability Blocked -> Blocked (70%)
-P_UB = 0.05 # Probability Unblocked -> Blocked (5%)
-# Implied: P_BU = 1 - P_BB = 0.30 (Prob Blocked -> Unblocked)
-# Implied: P_UU = 1 - P_UB = 0.95 (Prob Unblocked -> Unblocked)
+P_BB = 0.85 # Probability Blocked -> Blocked (Increased from 0.70)
+P_UB = 0.03 # Probability Unblocked -> Blocked (Decreased from 0.05)
 # ---------------------------------------------
 
 BANDWIDTH = 100e6
@@ -278,7 +263,8 @@ def mab_ucb1_action(ue_idx, t, mab_counts, mab_values, exploration_factor=2.0):
     total_counts_ue = np.sum(mab_counts[ue_idx, :]); ucb_values = np.zeros(NUM_BEAMS)
     for beam_idx in range(NUM_BEAMS):
          count = mab_counts[ue_idx, beam_idx]; mean_reward = mab_values[ue_idx, beam_idx] / count
-         exploration_bonus = np.sqrt(exploration_factor * np.log(max(1, total_counts_ue)) / count)
+         # Add epsilon to count in denominator to prevent division by zero if count is somehow still 0
+         exploration_bonus = np.sqrt(exploration_factor * np.log(max(1, total_counts_ue)) / (count + mab_epsilon))
          ucb_values[beam_idx] = mean_reward + exploration_bonus
     return np.argmax(ucb_values)
 
@@ -304,7 +290,7 @@ snr_log_cl = []; snr_log_angle_heuristic = []; snr_log_mab_ucb = []
 epsilon = 1.0
 prev_snr_cl = np.zeros(NUM_UES)
 # --- Initialize blockage state ---
-prev_is_blocked = np.zeros(NUM_UES, dtype=bool)
+prev_is_blocked = np.zeros(NUM_UES, dtype=bool) # Blockage state from previous step
 # ---------------------------------
 initial_positions = update_positions(0)
 initial_h_channel = generate_channel(initial_positions)
@@ -392,7 +378,7 @@ for t in range(NUM_TIMESTEPS):
     prev_snr_cl = snr_cl.copy()
 
     # --- Update Blockage State for Next Timestep ---
-    prev_is_blocked = current_is_blocked.copy()
+    prev_is_blocked = current_is_blocked.copy() # Store current blockage for next step's calculation
     # ---------------------------------------------
 
     # Train DQL Network
@@ -416,7 +402,7 @@ results_mab_ucb_eval = {"latency": [], "throughput": [], "energy": [], "accuracy
 snr_log_cl_eval = []; snr_log_angle_heuristic_eval = []; snr_log_mab_ucb_eval = []
 prev_snr_cl_eval = prev_snr_cl.copy()
 # --- Re-initialize blockage state for evaluation ---
-prev_is_blocked_eval = np.zeros(NUM_UES, dtype=bool)
+prev_is_blocked_eval = np.zeros(NUM_UES, dtype=bool) # Start evaluation with no blockage history
 # -------------------------------------------------
 
 for t_eval in range(EVAL_TIMESTEPS):
@@ -483,7 +469,7 @@ for t_eval in range(EVAL_TIMESTEPS):
     snr_log_cl_eval.append(avg_snr_cl)
 
     # --- Update Blockage State for Next Eval Timestep ---
-    prev_is_blocked_eval = current_is_blocked_eval.copy()
+    prev_is_blocked_eval = current_is_blocked_eval.copy() # Update eval blockage state
     # --------------------------------------------------
     prev_snr_cl_eval = snr_cl.copy()
 
