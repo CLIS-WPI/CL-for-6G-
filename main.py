@@ -72,10 +72,14 @@ TARGET_UPDATE_FREQ = 50
 PATH_LOSS_EXPONENT = 2.5
 MAB_EXPLORATION_FACTOR = 2.0
 
-# --- Blockage Model Parameters ---
-BLOCKAGE_PROBABILITY = 0.10 # 10% chance the heuristic beam is blocked
-BLOCKAGE_ATTENUATION_DB = 25.0 # 25 dB additional loss when blocked
-# ---------------------------------
+# --- Time-Correlated Blockage Model Parameters ---
+# BLOCKAGE_PROBABILITY = 0.10 # Removed
+BLOCKAGE_ATTENUATION_DB = 25.0 # Keep attenuation level
+P_BB = 0.70 # Probability Blocked -> Blocked (70%)
+P_UB = 0.05 # Probability Unblocked -> Blocked (5%)
+# Implied: P_BU = 1 - P_BB = 0.30 (Prob Blocked -> Unblocked)
+# Implied: P_UU = 1 - P_UB = 0.95 (Prob Unblocked -> Unblocked)
+# ---------------------------------------------
 
 BANDWIDTH = 100e6
 
@@ -144,25 +148,19 @@ def compute_path_loss(distances):
     path_loss_linear = 10 ** (-path_loss_db / 10)
     return path_loss_linear, path_loss_db
 
-# --- MODIFIED compute_snr with Blockage ---
+# Compute SNR (applies extra attenuation)
 def compute_snr(h_channel_all_ues, beam_idx, ue_idx, extra_attenuation_db=0.0):
-    """Computes SNR, applying extra attenuation if provided."""
     h_ue = h_channel_all_ues[ue_idx, :]
     beam = CODEBOOK[:, beam_idx]
     effective_signal_amplitude_sq = np.abs(np.dot(np.conj(h_ue), beam))**2
     noise_variance_relative = 10**((NOISE_POWER_DBM - TX_POWER_DBM) / 10)
-
     snr_linear = effective_signal_amplitude_sq / (noise_variance_relative + 1e-15)
     snr_db = 10 * np.log10(snr_linear + 1e-15)
-
-    # Apply extra attenuation (e.g., from blockage)
-    snr_db -= extra_attenuation_db
-
+    snr_db -= extra_attenuation_db # Apply blockage attenuation
     snr_db = np.clip(snr_db, -50, 50)
     return snr_db
-# -------------------------------------------
 
-# Channel Generation (No noise added here)
+# Channel Generation
 def generate_channel(positions):
     try:
         h_tuple = channel_model(batch_size=1, num_time_steps=1)
@@ -172,21 +170,19 @@ def generate_channel(positions):
          print("Falling back to simple Gaussian channel model.")
          h = (np.random.randn(1, NUM_UES, 1, 1, NUM_ANTENNAS, 1) +
               1j * np.random.randn(1, NUM_UES, 1, 1, NUM_ANTENNAS, 1)) / np.sqrt(2)
-
     h = h.reshape(NUM_UES, NUM_ANTENNAS)
     distances = np.abs(positions - BS_POSITION)
     path_loss_linear, path_loss_db = compute_path_loss(distances)
     h_channel = h * np.sqrt(path_loss_linear[:, np.newaxis])
     return h_channel
 
-# Initial Beam Scan (No blockage applied here)
+# Initial Beam Scan
 def initial_beam_scan(h_channel):
     initial_snr = np.zeros(NUM_UES)
     for i in range(NUM_UES):
         best_snr = -float('inf')
         for beam_idx in range(NUM_BEAMS):
-            # Call compute_snr without extra attenuation
-            snr = compute_snr(h_channel, beam_idx, i, extra_attenuation_db=0.0)
+            snr = compute_snr(h_channel, beam_idx, i, extra_attenuation_db=0.0) # No blockage initially
             if snr > best_snr:
                 best_snr = snr
         initial_snr[i] = best_snr
@@ -211,94 +207,60 @@ def compute_distances(positions):
     normalized_distances = distances / ROAD_LENGTH
     return normalized_distances, distances
 
-# --- MODIFIED compute_reward (Absolute Performance) ---
+# Compute Reward (Absolute Performance based)
 def compute_reward(throughput, snr, prev_snr, energy, accuracy_per_ue):
-     """Calculates reward based on absolute performance and accuracy."""
-     w_tput = 1.0
-     w_stab = 0.2
-     w_energy = -0.3
-     w_acc = 0.5
-
-     # Normalize throughput (adjust max value 1500 if needed)
+     w_tput = 1.0; w_stab = 0.2; w_energy = -0.3; w_acc = 0.5
      throughput_reward = w_tput * (throughput / 1500.0)
      stability_bonus = w_stab / (1 + abs(snr - prev_snr) + 1e-6)
      energy_penalty = w_energy * (max(0, energy) / 10)
      accuracy_reward = w_acc * np.mean(accuracy_per_ue)
      reward = throughput_reward + stability_bonus + energy_penalty + accuracy_reward
      return reward
-# ------------------------------------------------------
 
 def compute_throughput(snr_db):
     snr_linear = 10**(snr_db / 10)
-    # Handle potential overflow if snr_linear is huge
-    if snr_linear > 1e15: # Corresponds to SNR > 150 dB
-        snr_linear = 1e15
+    if snr_linear > 1e15: snr_linear = 1e15
     throughput_bps = BANDWIDTH * np.log2(1 + snr_linear)
-    return throughput_bps / 1e6 # Mbps
+    return throughput_bps / 1e6
 
 def compute_latency(avg_throughput_mbps):
-    base_latency = 0.5
-    max_additional_latency = 5
-    # Prevent potential overflow in exp
+    base_latency = 0.5; max_additional_latency = 5
     exp_term = np.clip((avg_throughput_mbps - 400) / 100, -50, 50)
     latency = base_latency + max_additional_latency / (1 + np.exp(exp_term))
     return latency
 
 def compute_energy(snr_db, distance_actual):
-    base_energy_mj = 3.0
-    snr_factor = 0.1 * max(0, snr_db)
-    distance_factor = 0.01 * distance_actual
+    base_energy_mj = 3.0; snr_factor = 0.1 * max(0, snr_db); distance_factor = 0.01 * distance_actual
     energy = base_energy_mj + snr_factor + distance_factor + 0.05 * max(0, snr_db) * (distance_actual / 100)
     return max(0.1, energy)
 
 # DQL Training Function
 def train_q_network():
-    if len(replay_buffer) < BATCH_SIZE:
-        return 0.0
+    if len(replay_buffer) < BATCH_SIZE: return 0.0
     batch_indices = np.random.choice(len(replay_buffer), BATCH_SIZE, replace=False)
     batch_data = [replay_buffer[i] for i in batch_indices]
     states, actions, rewards, next_states = zip(*batch_data)
-
     rewards_scalar = torch.tensor([r for r in rewards], dtype=torch.float32).to(device)
-    # Convert states/next_states list of arrays to a single large array first
-    states_np = np.array(states, dtype=np.float32)
-    next_states_np = np.array(next_states, dtype=np.float32)
-    actions_np = np.array(actions, dtype=np.int64) # Use int64 for LongTensor
-
-    all_states_tensor = torch.from_numpy(states_np).to(device)
-    all_actions_tensor = torch.from_numpy(actions_np).to(device)
+    states_np = np.array(states, dtype=np.float32); next_states_np = np.array(next_states, dtype=np.float32)
+    actions_np = np.array(actions, dtype=np.int64)
+    all_states_tensor = torch.from_numpy(states_np).to(device); all_actions_tensor = torch.from_numpy(actions_np).to(device)
     all_next_states_tensor = torch.from_numpy(next_states_np).to(device)
-
-    batch_size_actual = all_states_tensor.shape[0]
-    num_ues_actual = all_states_tensor.shape[1]
-    state_dim = all_states_tensor.shape[2]
-
+    batch_size_actual = all_states_tensor.shape[0]; num_ues_actual = all_states_tensor.shape[1]; state_dim = all_states_tensor.shape[2]
     reshaped_states = all_states_tensor.view(batch_size_actual * num_ues_actual, state_dim)
     reshaped_next_states = all_next_states_tensor.view(batch_size_actual * num_ues_actual, state_dim)
-
-    q_values_all = q_network(reshaped_states)
-    flat_actions = all_actions_tensor.view(-1)
+    q_values_all = q_network(reshaped_states); flat_actions = all_actions_tensor.view(-1)
     current_q_values = q_values_all.gather(1, flat_actions.unsqueeze(-1)).squeeze(-1)
-
     with torch.no_grad():
-        next_q_values_all = target_network(reshaped_next_states)
-        max_next_q_values = next_q_values_all.max(1)[0]
-
+        next_q_values_all = target_network(reshaped_next_states); max_next_q_values = next_q_values_all.max(1)[0]
     expanded_rewards = rewards_scalar.unsqueeze(1).expand(-1, num_ues_actual).reshape(-1)
     expected_q_values = expanded_rewards + GAMMA * max_next_q_values
-
     loss = nn.MSELoss()(current_q_values, expected_q_values)
     total_batch_loss = loss.item()
-
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
-
+    optimizer.zero_grad(); loss.backward(); optimizer.step()
     return total_batch_loss
 
-# Angle Heuristic Baseline (Now only calculates metrics, assumes SNR is pre-calculated)
+# Angle Heuristic Baseline (Calculates metrics from pre-calculated SNR)
 def angle_heuristic_beam_switching(snr_heuristic, positions_actual):
-    """Calculates metrics for the angle heuristic based on pre-calculated SNRs."""
     distances_norm, distances_actual = compute_distances(positions_actual)
     throughputs_heuristic = np.array([compute_throughput(snr) for snr in snr_heuristic])
     avg_throughput_heuristic = np.mean(throughputs_heuristic)
@@ -312,20 +274,16 @@ def angle_heuristic_beam_switching(snr_heuristic, positions_actual):
 # MAB UCB1 Action Selection
 def mab_ucb1_action(ue_idx, t, mab_counts, mab_values, exploration_factor=2.0):
     unexplored_arms = np.where(mab_counts[ue_idx, :] == 0)[0]
-    if len(unexplored_arms) > 0:
-        return unexplored_arms[0]
-    total_counts_ue = np.sum(mab_counts[ue_idx, :])
-    ucb_values = np.zeros(NUM_BEAMS)
+    if len(unexplored_arms) > 0: return unexplored_arms[0]
+    total_counts_ue = np.sum(mab_counts[ue_idx, :]); ucb_values = np.zeros(NUM_BEAMS)
     for beam_idx in range(NUM_BEAMS):
-         count = mab_counts[ue_idx, beam_idx]
-         mean_reward = mab_values[ue_idx, beam_idx] / count
+         count = mab_counts[ue_idx, beam_idx]; mean_reward = mab_values[ue_idx, beam_idx] / count
          exploration_bonus = np.sqrt(exploration_factor * np.log(max(1, total_counts_ue)) / count)
          ucb_values[beam_idx] = mean_reward + exploration_bonus
     return np.argmax(ucb_values)
 
-# MAB UCB1 Baseline Logic (Now only calculates metrics, assumes SNR is pre-calculated)
+# MAB UCB1 Baseline Logic (Calculates metrics from pre-calculated SNR)
 def mab_ucb1_beam_switching(snr_mab, positions_actual):
-    """Calculates metrics for MAB based on pre-calculated SNRs."""
     distances_norm, distances_actual = compute_distances(positions_actual)
     throughputs_mab = np.array([compute_throughput(snr) for snr in snr_mab])
     avg_throughput_mab = np.mean(throughputs_mab)
@@ -342,14 +300,12 @@ print("--- Starting Training Phase ---")
 results_cl = {"latency": [], "throughput": [], "energy": [], "accuracy": []}
 results_angle_heuristic = {"latency": [], "throughput": [], "energy": [], "accuracy": []}
 results_mab_ucb = {"latency": [], "throughput": [], "energy": [], "accuracy": []}
-
-snr_log_cl = []
-snr_log_angle_heuristic = []
-snr_log_mab_ucb = []
-
+snr_log_cl = []; snr_log_angle_heuristic = []; snr_log_mab_ucb = []
 epsilon = 1.0
 prev_snr_cl = np.zeros(NUM_UES)
-
+# --- Initialize blockage state ---
+prev_is_blocked = np.zeros(NUM_UES, dtype=bool)
+# ---------------------------------
 initial_positions = update_positions(0)
 initial_h_channel = generate_channel(initial_positions)
 prev_snr_cl = initial_beam_scan(initial_h_channel)
@@ -362,110 +318,88 @@ for t in range(NUM_TIMESTEPS):
     norm_distances, actual_distances = compute_distances(positions)
     h_channel = generate_channel(positions)
 
-    # --- Blockage Calculation ---
-    # Determine which beam the heuristic would choose for each UE
+    # --- Time-Correlated Blockage Calculation ---
     heuristic_beam_indices = np.zeros(NUM_UES, dtype=int)
     for i in range(NUM_UES):
         heuristic_beam_indices[i] = np.argmin(np.abs(BEAM_ANGLES - angles[i]))
 
-    # Determine if the heuristic beam is blocked for each UE
-    blockage_rand = np.random.rand(NUM_UES)
-    is_blocked = (blockage_rand < BLOCKAGE_PROBABILITY)
-    # --------------------------
+    current_is_blocked = np.zeros(NUM_UES, dtype=bool)
+    for i in range(NUM_UES):
+        rand_val = np.random.rand()
+        if prev_is_blocked[i]: # Was blocked last step
+            current_is_blocked[i] = (rand_val < P_BB) # Check prob of staying blocked
+        else: # Was not blocked last step
+            current_is_blocked[i] = (rand_val < P_UB) # Check prob of becoming blocked
+    # ---------------------------------------------
 
     # --- Calculate SNRs for ALL methods considering blockage ---
-    snr_cl = np.zeros(NUM_UES)
-    snr_heuristic = np.zeros(NUM_UES)
-    snr_mab = np.zeros(NUM_UES)
-    actions_cl = np.zeros(NUM_UES, dtype=int)
-    actions_mab = np.zeros(NUM_UES, dtype=int)
-
+    snr_cl = np.zeros(NUM_UES); snr_heuristic = np.zeros(NUM_UES); snr_mab = np.zeros(NUM_UES)
+    actions_cl = np.zeros(NUM_UES, dtype=int); actions_mab = np.zeros(NUM_UES, dtype=int)
     state_cl = np.array([[angles[i], prev_snr_cl[i], norm_distances[i]] for i in range(NUM_UES)])
 
     for i in range(NUM_UES):
-        # Heuristic Action (Index is already known)
         action_h = heuristic_beam_indices[i]
-
-        # MAB Action Selection
         actions_mab[i] = mab_ucb1_action(i, t, mab_counts, mab_values, MAB_EXPLORATION_FACTOR)
         action_mab = actions_mab[i]
-
-        # DQL Action Selection
-        if np.random.rand() < epsilon:
-            actions_cl[i] = np.random.randint(NUM_BEAMS)
+        if np.random.rand() < epsilon: actions_cl[i] = np.random.randint(NUM_BEAMS)
         else:
             with torch.no_grad():
                 state_tensor_i = torch.tensor(state_cl[i], dtype=torch.float32).unsqueeze(0).to(device)
                 actions_cl[i] = q_network(state_tensor_i).argmax().item()
         action_cl = actions_cl[i]
 
-        # Determine attenuation for each action
-        attenuation_h = BLOCKAGE_ATTENUATION_DB if action_h == heuristic_beam_indices[i] and is_blocked[i] else 0.0
-        attenuation_mab = BLOCKAGE_ATTENUATION_DB if action_mab == heuristic_beam_indices[i] and is_blocked[i] else 0.0
-        attenuation_cl = BLOCKAGE_ATTENUATION_DB if action_cl == heuristic_beam_indices[i] and is_blocked[i] else 0.0
+        # Determine attenuation based on CURRENT blockage state
+        attenuation_h = BLOCKAGE_ATTENUATION_DB if action_h == heuristic_beam_indices[i] and current_is_blocked[i] else 0.0
+        attenuation_mab = BLOCKAGE_ATTENUATION_DB if action_mab == heuristic_beam_indices[i] and current_is_blocked[i] else 0.0
+        attenuation_cl = BLOCKAGE_ATTENUATION_DB if action_cl == heuristic_beam_indices[i] and current_is_blocked[i] else 0.0
 
-        # Compute SNRs with potential blockage attenuation
+        # Compute SNRs
         snr_heuristic[i] = compute_snr(h_channel, action_h, i, extra_attenuation_db=attenuation_h)
         snr_mab[i] = compute_snr(h_channel, action_mab, i, extra_attenuation_db=attenuation_mab)
         snr_cl[i] = compute_snr(h_channel, action_cl, i, extra_attenuation_db=attenuation_cl)
 
         # --- MAB Update ---
-        # Use the calculated SNR (potentially blocked) as reward
-        reward_mab = snr_mab[i]
+        reward_mab = snr_mab[i] # Use potentially blocked SNR for MAB learning
         mab_counts[i, action_mab] += 1
         mab_values[i, action_mab] += reward_mab
         # ------------------
 
-    # --- Calculate Metrics and Rewards (based on calculated SNRs) ---
-
-    # Heuristic Metrics
+    # --- Calculate Metrics and Rewards ---
     latency_h, throughput_h, energy_h, accuracy_h, avg_snr_h = angle_heuristic_beam_switching(snr_heuristic, positions)
-    results_angle_heuristic["latency"].append(latency_h)
-    results_angle_heuristic["throughput"].append(throughput_h)
-    results_angle_heuristic["energy"].append(energy_h)
-    results_angle_heuristic["accuracy"].append(accuracy_h)
+    results_angle_heuristic["latency"].append(latency_h); results_angle_heuristic["throughput"].append(throughput_h)
+    results_angle_heuristic["energy"].append(energy_h); results_angle_heuristic["accuracy"].append(accuracy_h)
     snr_log_angle_heuristic.append(avg_snr_h)
 
-    # MAB Metrics
     latency_mab, throughput_mab, energy_mab, accuracy_mab, avg_snr_mab = mab_ucb1_beam_switching(snr_mab, positions)
-    results_mab_ucb["latency"].append(latency_mab)
-    results_mab_ucb["throughput"].append(throughput_mab)
-    results_mab_ucb["energy"].append(energy_mab)
-    results_mab_ucb["accuracy"].append(accuracy_mab)
+    results_mab_ucb["latency"].append(latency_mab); results_mab_ucb["throughput"].append(throughput_mab)
+    results_mab_ucb["energy"].append(energy_mab); results_mab_ucb["accuracy"].append(accuracy_mab)
     snr_log_mab_ucb.append(avg_snr_mab)
 
-    # DQL (CL) Metrics and Reward Calculation
-    throughputs_cl = np.array([compute_throughput(snr) for snr in snr_cl])
-    avg_throughput_cl = np.mean(throughputs_cl)
-    energies_cl = np.array([compute_energy(snr_cl[i], actual_distances[i]) for i in range(NUM_UES)])
-    avg_energy_cl = np.mean(energies_cl)
-    avg_snr_cl = np.mean(snr_cl)
-    latency_cl = compute_latency(avg_throughput_cl)
-    accuracy_per_ue = (snr_cl > SNR_THRESHOLD).astype(float)
-    avg_accuracy_cl = np.mean(accuracy_per_ue)
-
+    throughputs_cl = np.array([compute_throughput(snr) for snr in snr_cl]); avg_throughput_cl = np.mean(throughputs_cl)
+    energies_cl = np.array([compute_energy(snr_cl[i], actual_distances[i]) for i in range(NUM_UES)]); avg_energy_cl = np.mean(energies_cl)
+    avg_snr_cl = np.mean(snr_cl); latency_cl = compute_latency(avg_throughput_cl)
+    accuracy_per_ue = (snr_cl > SNR_THRESHOLD).astype(float); avg_accuracy_cl = np.mean(accuracy_per_ue)
     reward_cl = compute_reward(avg_throughput_cl, avg_snr_cl, np.mean(prev_snr_cl), avg_energy_cl, accuracy_per_ue)
-
-    results_cl["latency"].append(latency_cl)
-    results_cl["throughput"].append(avg_throughput_cl)
-    results_cl["energy"].append(avg_energy_cl)
-    results_cl["accuracy"].append(avg_accuracy_cl)
+    results_cl["latency"].append(latency_cl); results_cl["throughput"].append(avg_throughput_cl)
+    results_cl["energy"].append(avg_energy_cl); results_cl["accuracy"].append(avg_accuracy_cl)
     snr_log_cl.append(avg_snr_cl)
 
     # --- DQL Experience Replay ---
-    next_positions = update_positions(t + 1)
-    next_angles = compute_relative_angles(next_positions)
+    next_positions = update_positions(t + 1); next_angles = compute_relative_angles(next_positions)
     next_norm_distances, _ = compute_distances(next_positions)
     next_state_cl = np.array([[next_angles[i], snr_cl[i], next_norm_distances[i]] for i in range(NUM_UES)])
     replay_buffer.append((state_cl, actions_cl, reward_cl, next_state_cl))
     prev_snr_cl = snr_cl.copy()
 
+    # --- Update Blockage State for Next Timestep ---
+    prev_is_blocked = current_is_blocked.copy()
+    # ---------------------------------------------
+
     # Train DQL Network
     loss_val = train_q_network()
 
     # Update Target Network and Epsilon
-    if (t + 1) % TARGET_UPDATE_FREQ == 0:
-        target_network.load_state_dict(q_network.state_dict())
+    if (t + 1) % TARGET_UPDATE_FREQ == 0: target_network.load_state_dict(q_network.state_dict())
     epsilon = max(0.1, epsilon * 0.999)
 
     if (t + 1) % 200 == 0:
@@ -479,97 +413,78 @@ print("--- Starting Evaluation Phase ---")
 results_cl_eval = {"latency": [], "throughput": [], "energy": [], "accuracy": []}
 results_angle_heuristic_eval = {"latency": [], "throughput": [], "energy": [], "accuracy": []}
 results_mab_ucb_eval = {"latency": [], "throughput": [], "energy": [], "accuracy": []}
-
-snr_log_cl_eval = []
-snr_log_angle_heuristic_eval = []
-snr_log_mab_ucb_eval = []
-
+snr_log_cl_eval = []; snr_log_angle_heuristic_eval = []; snr_log_mab_ucb_eval = []
 prev_snr_cl_eval = prev_snr_cl.copy()
+# --- Re-initialize blockage state for evaluation ---
+prev_is_blocked_eval = np.zeros(NUM_UES, dtype=bool)
+# -------------------------------------------------
 
 for t_eval in range(EVAL_TIMESTEPS):
     t = NUM_TIMESTEPS + t_eval
 
     # 1. Environment Update
-    positions = update_positions(t)
-    angles = compute_relative_angles(positions)
-    norm_distances, actual_distances = compute_distances(positions)
-    h_channel = generate_channel(positions)
+    positions = update_positions(t); angles = compute_relative_angles(positions)
+    norm_distances, actual_distances = compute_distances(positions); h_channel = generate_channel(positions)
 
-    # --- Blockage Calculation ---
+    # --- Time-Correlated Blockage Calculation (Eval) ---
     heuristic_beam_indices = np.zeros(NUM_UES, dtype=int)
+    for i in range(NUM_UES): heuristic_beam_indices[i] = np.argmin(np.abs(BEAM_ANGLES - angles[i]))
+    current_is_blocked_eval = np.zeros(NUM_UES, dtype=bool)
     for i in range(NUM_UES):
-        heuristic_beam_indices[i] = np.argmin(np.abs(BEAM_ANGLES - angles[i]))
-    blockage_rand = np.random.rand(NUM_UES)
-    is_blocked = (blockage_rand < BLOCKAGE_PROBABILITY)
-    # --------------------------
+        rand_val = np.random.rand()
+        if prev_is_blocked_eval[i]: current_is_blocked_eval[i] = (rand_val < P_BB)
+        else: current_is_blocked_eval[i] = (rand_val < P_UB)
+    # ---------------------------------------------------
 
-    # --- Calculate SNRs for ALL methods considering blockage ---
-    snr_cl = np.zeros(NUM_UES)
-    snr_heuristic = np.zeros(NUM_UES)
-    snr_mab = np.zeros(NUM_UES)
-    actions_cl = np.zeros(NUM_UES, dtype=int)
-    actions_mab = np.zeros(NUM_UES, dtype=int)
-
+    # --- Calculate SNRs for ALL methods considering blockage (Eval) ---
+    snr_cl = np.zeros(NUM_UES); snr_heuristic = np.zeros(NUM_UES); snr_mab = np.zeros(NUM_UES)
+    actions_cl = np.zeros(NUM_UES, dtype=int); actions_mab = np.zeros(NUM_UES, dtype=int)
     state_cl = np.array([[angles[i], prev_snr_cl_eval[i], norm_distances[i]] for i in range(NUM_UES)])
 
     for i in range(NUM_UES):
-        # Heuristic Action
         action_h = heuristic_beam_indices[i]
-
-        # MAB Action Selection (Exploitation)
-        counts_i = mab_counts[i, :]
+        # MAB (Exploitation)
+        counts_i = mab_counts[i, :];
         if np.all(counts_i == 0): actions_mab[i] = np.random.randint(NUM_BEAMS)
-        else:
-            mean_rewards = np.full(NUM_BEAMS, -np.inf); valid_indices = counts_i > 0
-            mean_rewards[valid_indices] = np.divide(mab_values[i, valid_indices], counts_i[valid_indices])
-            actions_mab[i] = np.argmax(mean_rewards)
+        else: mean_rewards = np.full(NUM_BEAMS, -np.inf); valid_indices = counts_i > 0
+        mean_rewards[valid_indices] = np.divide(mab_values[i, valid_indices], counts_i[valid_indices]); actions_mab[i] = np.argmax(mean_rewards)
         action_mab = actions_mab[i]
-
-        # DQL Action Selection (Exploitation)
-        with torch.no_grad():
-            state_tensor_i = torch.tensor(state_cl[i], dtype=torch.float32).unsqueeze(0).to(device)
-            actions_cl[i] = q_network(state_tensor_i).argmax().item()
+        # DQL (Exploitation)
+        with torch.no_grad(): state_tensor_i = torch.tensor(state_cl[i], dtype=torch.float32).unsqueeze(0).to(device); actions_cl[i] = q_network(state_tensor_i).argmax().item()
         action_cl = actions_cl[i]
 
-        # Determine attenuation
-        attenuation_h = BLOCKAGE_ATTENUATION_DB if action_h == heuristic_beam_indices[i] and is_blocked[i] else 0.0
-        attenuation_mab = BLOCKAGE_ATTENUATION_DB if action_mab == heuristic_beam_indices[i] and is_blocked[i] else 0.0
-        attenuation_cl = BLOCKAGE_ATTENUATION_DB if action_cl == heuristic_beam_indices[i] and is_blocked[i] else 0.0
+        # Determine attenuation based on CURRENT eval blockage state
+        attenuation_h = BLOCKAGE_ATTENUATION_DB if action_h == heuristic_beam_indices[i] and current_is_blocked_eval[i] else 0.0
+        attenuation_mab = BLOCKAGE_ATTENUATION_DB if action_mab == heuristic_beam_indices[i] and current_is_blocked_eval[i] else 0.0
+        attenuation_cl = BLOCKAGE_ATTENUATION_DB if action_cl == heuristic_beam_indices[i] and current_is_blocked_eval[i] else 0.0
 
         # Compute SNRs
         snr_heuristic[i] = compute_snr(h_channel, action_h, i, extra_attenuation_db=attenuation_h)
         snr_mab[i] = compute_snr(h_channel, action_mab, i, extra_attenuation_db=attenuation_mab)
         snr_cl[i] = compute_snr(h_channel, action_cl, i, extra_attenuation_db=attenuation_cl)
 
-    # --- Calculate Metrics ---
+    # --- Calculate Metrics (Eval) ---
     latency_h, throughput_h, energy_h, accuracy_h, avg_snr_h = angle_heuristic_beam_switching(snr_heuristic, positions)
-    results_angle_heuristic_eval["latency"].append(latency_h)
-    results_angle_heuristic_eval["throughput"].append(throughput_h)
-    results_angle_heuristic_eval["energy"].append(energy_h)
-    results_angle_heuristic_eval["accuracy"].append(accuracy_h)
+    results_angle_heuristic_eval["latency"].append(latency_h); results_angle_heuristic_eval["throughput"].append(throughput_h)
+    results_angle_heuristic_eval["energy"].append(energy_h); results_angle_heuristic_eval["accuracy"].append(accuracy_h)
     snr_log_angle_heuristic_eval.append(avg_snr_h)
 
     latency_mab, throughput_mab, energy_mab, accuracy_mab, avg_snr_mab = mab_ucb1_beam_switching(snr_mab, positions)
-    results_mab_ucb_eval["latency"].append(latency_mab)
-    results_mab_ucb_eval["throughput"].append(throughput_mab)
-    results_mab_ucb_eval["energy"].append(energy_mab)
-    results_mab_ucb_eval["accuracy"].append(accuracy_mab)
+    results_mab_ucb_eval["latency"].append(latency_mab); results_mab_ucb_eval["throughput"].append(throughput_mab)
+    results_mab_ucb_eval["energy"].append(energy_mab); results_mab_ucb_eval["accuracy"].append(accuracy_mab)
     snr_log_mab_ucb_eval.append(avg_snr_mab)
 
-    throughputs_cl = np.array([compute_throughput(snr) for snr in snr_cl])
-    avg_throughput_cl = np.mean(throughputs_cl)
-    energies_cl = np.array([compute_energy(snr_cl[i], actual_distances[i]) for i in range(NUM_UES)])
-    avg_energy_cl = np.mean(energies_cl)
-    avg_snr_cl = np.mean(snr_cl)
-    latency_cl = compute_latency(avg_throughput_cl)
+    throughputs_cl = np.array([compute_throughput(snr) for snr in snr_cl]); avg_throughput_cl = np.mean(throughputs_cl)
+    energies_cl = np.array([compute_energy(snr_cl[i], actual_distances[i]) for i in range(NUM_UES)]); avg_energy_cl = np.mean(energies_cl)
+    avg_snr_cl = np.mean(snr_cl); latency_cl = compute_latency(avg_throughput_cl)
     accuracy_cl = np.mean((snr_cl > SNR_THRESHOLD).astype(float))
-
-    results_cl_eval["latency"].append(latency_cl)
-    results_cl_eval["throughput"].append(avg_throughput_cl)
-    results_cl_eval["energy"].append(avg_energy_cl)
-    results_cl_eval["accuracy"].append(accuracy_cl)
+    results_cl_eval["latency"].append(latency_cl); results_cl_eval["throughput"].append(avg_throughput_cl)
+    results_cl_eval["energy"].append(avg_energy_cl); results_cl_eval["accuracy"].append(accuracy_cl)
     snr_log_cl_eval.append(avg_snr_cl)
 
+    # --- Update Blockage State for Next Eval Timestep ---
+    prev_is_blocked_eval = current_is_blocked_eval.copy()
+    # --------------------------------------------------
     prev_snr_cl_eval = snr_cl.copy()
 
     if (t_eval + 1) % 100 == 0:
@@ -582,11 +497,7 @@ print("--- Plotting Results ---")
 plt.figure(figsize=(15, 12))
 metrics = ["latency", "throughput", "energy", "accuracy"]
 ylabels = ["Latency (ms)", "Throughput (Mbps)", "Energy (mJ)", "Accuracy"]
-color_cl_train = "blue"
-color_cl_eval = "green"
-color_heuristic = "orange"
-color_mab = "red"
-
+color_cl_train = "blue"; color_cl_eval = "green"; color_heuristic = "orange"; color_mab = "red"
 for i, (key, ylabel) in enumerate(zip(metrics, ylabels), 1):
     plt.subplot(3, 2, i)
     plt.plot(results_cl[key], label=f"CL ({key.capitalize()}) Train", color=color_cl_train, linewidth=1.5)
@@ -596,12 +507,8 @@ for i, (key, ylabel) in enumerate(zip(metrics, ylabels), 1):
     plt.plot(eval_range, results_cl_eval[key], label=f"CL ({key.capitalize()}) Eval", color=color_cl_eval, linewidth=1.5)
     plt.plot(eval_range, results_angle_heuristic_eval[key], linestyle="--", color=color_heuristic, linewidth=1.0)
     plt.plot(eval_range, results_mab_ucb_eval[key], label=f"MAB UCB1 ({key.capitalize()}) Eval", color=color_mab, linestyle=":", linewidth=1.5)
-    plt.xlabel("Timestep")
-    plt.ylabel(ylabel)
-    plt.title(f"Comparison of {key.capitalize()}")
-    plt.legend(fontsize='small')
-    plt.grid(True, linestyle=':', alpha=0.6)
-
+    plt.xlabel("Timestep"); plt.ylabel(ylabel); plt.title(f"Comparison of {key.capitalize()}")
+    plt.legend(fontsize='small'); plt.grid(True, linestyle=':', alpha=0.6)
 # Plot SNR
 plt.subplot(3, 2, 5)
 plt.plot(snr_log_cl, label="CL Avg SNR (Train)", color=color_cl_train, linewidth=1.5)
@@ -611,28 +518,20 @@ eval_range = range(NUM_TIMESTEPS, NUM_TIMESTEPS + EVAL_TIMESTEPS)
 plt.plot(eval_range, snr_log_cl_eval, label="CL Avg SNR (Eval)", color=color_cl_eval, linewidth=1.5)
 plt.plot(eval_range, snr_log_angle_heuristic_eval, linestyle="--", color=color_heuristic, linewidth=1.0)
 plt.plot(eval_range, snr_log_mab_ucb_eval, label="MAB UCB1 Avg SNR (Eval)", color=color_mab, linestyle=":", linewidth=1.5)
-plt.xlabel("Timestep")
-plt.ylabel("Average SNR (dB)")
-plt.title("Average SNR Comparison")
-plt.legend(fontsize='small')
-plt.grid(True, linestyle=':', alpha=0.6)
-
-plt.suptitle("Online Learning Beam Switching Performance Comparison (with Blockage)", fontsize=16, y=1.02)
+plt.xlabel("Timestep"); plt.ylabel("Average SNR (dB)"); plt.title("Average SNR Comparison")
+plt.legend(fontsize='small'); plt.grid(True, linestyle=':', alpha=0.6)
+plt.suptitle("Online Learning Beam Switching Performance Comparison (Time-Correlated Blockage)", fontsize=16, y=1.02) # Updated title
 plt.tight_layout(rect=[0, 0, 1, 1])
 try:
-    plt.savefig("results_comparison_with_blockage.png", dpi=300, bbox_inches='tight')
-    print("Results plot saved to results_comparison_with_blockage.png")
-except Exception as e:
-    print(f"Error saving plot: {e}")
+    plt.savefig("results_comparison_correlated_blockage.png", dpi=300, bbox_inches='tight') # Updated filename
+    print("Results plot saved to results_comparison_correlated_blockage.png")
+except Exception as e: print(f"Error saving plot: {e}")
 # plt.show()
-
 
 # --- Print average metrics ---
 print("\n--- Average Metrics ---")
 def print_avg_results(label, results_dict, snr_log):
-    if not results_dict['latency'] or not snr_log:
-        print(f"{label}: No data to report.")
-        return
+    if not results_dict['latency'] or not snr_log: print(f"{label}: No data to report."); return
     print(f"{label}:")
     print(f"  Avg Latency:    {np.mean(results_dict['latency']):.2f} ms")
     print(f"  Avg Throughput: {np.mean(results_dict['throughput']):.2f} Mbps")
