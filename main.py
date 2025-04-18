@@ -59,11 +59,14 @@ SNR_THRESHOLD = 14.0
 TARGET_UPDATE_FREQ = 50
 PATH_LOSS_EXPONENT = 2.5
 MAB_EXPLORATION_FACTOR = 2.0
+VELOCITY_NORMALIZATION_FACTOR = 20.0 # Approx max speed in m/s
+SNR_NORM_MIN = -10.0 # Min expected SNR for normalization
+SNR_NORM_MAX = 50.0  # Max expected SNR for normalization
 
 # --- Time-Correlated Blockage Model Parameters ---
 BLOCKAGE_ATTENUATION_DB = 25.0 # Keep attenuation level
-P_BB = 0.85 # Probability Blocked -> Blocked (Increased from 0.70)
-P_UB = 0.03 # Probability Unblocked -> Blocked (Decreased from 0.05)
+P_BB = 0.85 # Probability Blocked -> Blocked
+P_UB = 0.03 # Probability Unblocked -> Blocked
 # ---------------------------------------------
 
 BANDWIDTH = 100e6
@@ -88,6 +91,7 @@ BEAM_ANGLES = np.linspace(-np.pi/2, np.pi/2, NUM_BEAMS) # Store beam angles glob
 class QNetwork(nn.Module):
     def __init__(self, input_size, output_size):
         super(QNetwork, self).__init__()
+        # Adjust hidden layers if needed for larger input
         self.fc1 = nn.Linear(input_size, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, 128)
@@ -96,6 +100,9 @@ class QNetwork(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
+        # --- Add input normalization if not done before passing ---
+        # Example: x = (x - mean) / std
+        # ---
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
         x = self.relu(self.fc3(x))
@@ -103,13 +110,14 @@ class QNetwork(nn.Module):
         x = self.fc5(x)
         return x
 
-# Initialize models for DQL
-input_size = 3  # Angle, SNR, Distance
+# --- Initialize models for DQL with NEW input size ---
+input_size = 5  # Angle, Norm_SNR, Norm_Dist, Norm_Velocity, Prev_Block_Status
 q_network = QNetwork(input_size, NUM_BEAMS).to(device)
 target_network = QNetwork(input_size, NUM_BEAMS).to(device)
-target_network.load_state_dict(q_network.state_dict())
+target_network.load_state_dict(q_network.state_dict()) # Initialize target same as online
 optimizer = torch.optim.Adam(q_network.parameters(), lr=LEARNING_RATE)
 replay_buffer = deque(maxlen=BUFFER_SIZE)
+# -----------------------------------------------------
 
 # MAB UCB1 Initialization
 mab_counts = np.zeros((NUM_UES, NUM_BEAMS))
@@ -142,7 +150,7 @@ def compute_snr(h_channel_all_ues, beam_idx, ue_idx, extra_attenuation_db=0.0):
     snr_linear = effective_signal_amplitude_sq / (noise_variance_relative + 1e-15)
     snr_db = 10 * np.log10(snr_linear + 1e-15)
     snr_db -= extra_attenuation_db # Apply blockage attenuation
-    snr_db = np.clip(snr_db, -50, 50)
+    snr_db = np.clip(snr_db, -50, 50) # Keep clipping
     return snr_db
 
 # Channel Generation
@@ -167,21 +175,38 @@ def initial_beam_scan(h_channel):
     for i in range(NUM_UES):
         best_snr = -float('inf')
         for beam_idx in range(NUM_BEAMS):
-            snr = compute_snr(h_channel, beam_idx, i, extra_attenuation_db=0.0) # No blockage initially
-            if snr > best_snr:
-                best_snr = snr
+            snr = compute_snr(h_channel, beam_idx, i, extra_attenuation_db=0.0)
+            if snr > best_snr: best_snr = snr
         initial_snr[i] = best_snr
     return initial_snr
 
-# UE Position Update
+# --- MODIFIED UE Position Update to return velocity ---
+# Store previous positions globally or pass them around
+# Global storage is simpler for this script structure
+global_prev_positions = None
+
 def update_positions(t):
+    global global_prev_positions
     positions = np.zeros(NUM_UES)
+    velocities = np.zeros(NUM_UES) # Speed along the road axis
+
+    # Calculate current positions
     for i in range(NUM_UES):
          freq = 0.01 + i * 0.005
          movement_range = 200
          positions[i] = BS_POSITION + movement_range * np.sin(freq * t * TIMESTEP_DURATION)
          positions[i] = np.clip(positions[i], 0, ROAD_LENGTH)
-    return positions
+
+    # Calculate velocities (handle first step)
+    if global_prev_positions is not None:
+        velocities = (positions - global_prev_positions) / TIMESTEP_DURATION
+    # else: velocities remain zero for t=0
+
+    # Update previous positions for next step
+    global_prev_positions = positions.copy()
+
+    return positions, velocities # Return both
+# ----------------------------------------------------
 
 # Utility Functions
 def compute_relative_angles(positions):
@@ -191,6 +216,16 @@ def compute_distances(positions):
     distances = np.abs(positions - BS_POSITION)
     normalized_distances = distances / ROAD_LENGTH
     return normalized_distances, distances
+
+# --- Utility Functions for State Normalization ---
+def normalize_snr(snr_db):
+    """Normalizes SNR to roughly [0, 1] range."""
+    return np.clip((snr_db - SNR_NORM_MIN) / (SNR_NORM_MAX - SNR_NORM_MIN), 0.0, 1.0)
+
+def normalize_velocity(velocity_mps):
+    """Normalizes velocity to roughly [-1, 1] range."""
+    return np.clip(velocity_mps / VELOCITY_NORMALIZATION_FACTOR, -1.0, 1.0)
+# -------------------------------------------------
 
 # Compute Reward (Absolute Performance based)
 def compute_reward(throughput, snr, prev_snr, energy, accuracy_per_ue):
@@ -219,7 +254,7 @@ def compute_energy(snr_db, distance_actual):
     energy = base_energy_mj + snr_factor + distance_factor + 0.05 * max(0, snr_db) * (distance_actual / 100)
     return max(0.1, energy)
 
-# DQL Training Function
+# DQL Training Function (Handles new state dimension)
 def train_q_network():
     if len(replay_buffer) < BATCH_SIZE: return 0.0
     batch_indices = np.random.choice(len(replay_buffer), BATCH_SIZE, replace=False)
@@ -230,7 +265,14 @@ def train_q_network():
     actions_np = np.array(actions, dtype=np.int64)
     all_states_tensor = torch.from_numpy(states_np).to(device); all_actions_tensor = torch.from_numpy(actions_np).to(device)
     all_next_states_tensor = torch.from_numpy(next_states_np).to(device)
-    batch_size_actual = all_states_tensor.shape[0]; num_ues_actual = all_states_tensor.shape[1]; state_dim = all_states_tensor.shape[2]
+    batch_size_actual = all_states_tensor.shape[0]; num_ues_actual = all_states_tensor.shape[1]
+    state_dim = all_states_tensor.shape[2] # Should be 5 now
+    # print(f"DEBUG: state_dim in train_q_network: {state_dim}") # Optional debug
+    if state_dim != input_size:
+        print(f"ERROR: State dimension mismatch! Expected {input_size}, Got {state_dim}")
+        # Handle error appropriately, maybe skip training this batch
+        return -1.0 # Indicate error
+
     reshaped_states = all_states_tensor.view(batch_size_actual * num_ues_actual, state_dim)
     reshaped_next_states = all_next_states_tensor.view(batch_size_actual * num_ues_actual, state_dim)
     q_values_all = q_network(reshaped_states); flat_actions = all_actions_tensor.view(-1)
@@ -263,7 +305,6 @@ def mab_ucb1_action(ue_idx, t, mab_counts, mab_values, exploration_factor=2.0):
     total_counts_ue = np.sum(mab_counts[ue_idx, :]); ucb_values = np.zeros(NUM_BEAMS)
     for beam_idx in range(NUM_BEAMS):
          count = mab_counts[ue_idx, beam_idx]; mean_reward = mab_values[ue_idx, beam_idx] / count
-         # Add epsilon to count in denominator to prevent division by zero if count is somehow still 0
          exploration_bonus = np.sqrt(exploration_factor * np.log(max(1, total_counts_ue)) / (count + mab_epsilon))
          ucb_values[beam_idx] = mean_reward + exploration_bonus
     return np.argmax(ucb_values)
@@ -289,39 +330,51 @@ results_mab_ucb = {"latency": [], "throughput": [], "energy": [], "accuracy": []
 snr_log_cl = []; snr_log_angle_heuristic = []; snr_log_mab_ucb = []
 epsilon = 1.0
 prev_snr_cl = np.zeros(NUM_UES)
-# --- Initialize blockage state ---
 prev_is_blocked = np.zeros(NUM_UES, dtype=bool) # Blockage state from previous step
-# ---------------------------------
-initial_positions = update_positions(0)
+prev_positions = None # Store previous positions for velocity calc
+
+initial_positions, _ = update_positions(0) # Get initial positions
 initial_h_channel = generate_channel(initial_positions)
 prev_snr_cl = initial_beam_scan(initial_h_channel)
 print(f"Initial Avg SNR from Scan: {np.mean(prev_snr_cl):.2f} dB")
+# Initialize prev_positions after the first call to update_positions
+prev_positions = initial_positions.copy()
 
 for t in range(NUM_TIMESTEPS):
     # 1. Environment Update
-    positions = update_positions(t)
+    positions, velocities = update_positions(t) # Get current positions and velocities
     angles = compute_relative_angles(positions)
     norm_distances, actual_distances = compute_distances(positions)
     h_channel = generate_channel(positions)
+    norm_velocities = normalize_velocity(velocities) # Normalize velocities
 
     # --- Time-Correlated Blockage Calculation ---
     heuristic_beam_indices = np.zeros(NUM_UES, dtype=int)
-    for i in range(NUM_UES):
-        heuristic_beam_indices[i] = np.argmin(np.abs(BEAM_ANGLES - angles[i]))
-
+    for i in range(NUM_UES): heuristic_beam_indices[i] = np.argmin(np.abs(BEAM_ANGLES - angles[i]))
     current_is_blocked = np.zeros(NUM_UES, dtype=bool)
     for i in range(NUM_UES):
         rand_val = np.random.rand()
-        if prev_is_blocked[i]: # Was blocked last step
-            current_is_blocked[i] = (rand_val < P_BB) # Check prob of staying blocked
-        else: # Was not blocked last step
-            current_is_blocked[i] = (rand_val < P_UB) # Check prob of becoming blocked
+        if prev_is_blocked[i]: current_is_blocked[i] = (rand_val < P_BB)
+        else: current_is_blocked[i] = (rand_val < P_UB)
     # ---------------------------------------------
 
     # --- Calculate SNRs for ALL methods considering blockage ---
     snr_cl = np.zeros(NUM_UES); snr_heuristic = np.zeros(NUM_UES); snr_mab = np.zeros(NUM_UES)
     actions_cl = np.zeros(NUM_UES, dtype=int); actions_mab = np.zeros(NUM_UES, dtype=int)
-    state_cl = np.array([[angles[i], prev_snr_cl[i], norm_distances[i]] for i in range(NUM_UES)])
+
+    # --- Construct NEW DRL State (5 dimensions) ---
+    norm_prev_snr_cl = normalize_snr(prev_snr_cl) # Normalize previous SNR
+    prev_blocked_float = prev_is_blocked.astype(float) # Convert previous blockage to float
+    # Note: Velocity calculated based on t-1 and t, so it's info available at step t
+    # Use velocity calculated *before* this loop iteration based on pos[t] and pos[t-1]
+    state_cl = np.array([[
+        angles[i],
+        norm_prev_snr_cl[i],
+        norm_distances[i],
+        norm_velocities[i], # Use normalized velocity
+        prev_blocked_float[i] # Use previous blockage status
+    ] for i in range(NUM_UES)])
+    # ---------------------------------------------
 
     for i in range(NUM_UES):
         action_h = heuristic_beam_indices[i]
@@ -330,6 +383,7 @@ for t in range(NUM_TIMESTEPS):
         if np.random.rand() < epsilon: actions_cl[i] = np.random.randint(NUM_BEAMS)
         else:
             with torch.no_grad():
+                # Ensure state_cl[i] has 5 elements before converting
                 state_tensor_i = torch.tensor(state_cl[i], dtype=torch.float32).unsqueeze(0).to(device)
                 actions_cl[i] = q_network(state_tensor_i).argmax().item()
         action_cl = actions_cl[i]
@@ -345,7 +399,7 @@ for t in range(NUM_TIMESTEPS):
         snr_cl[i] = compute_snr(h_channel, action_cl, i, extra_attenuation_db=attenuation_cl)
 
         # --- MAB Update ---
-        reward_mab = snr_mab[i] # Use potentially blocked SNR for MAB learning
+        reward_mab = snr_mab[i]
         mab_counts[i, action_mab] += 1
         mab_values[i, action_mab] += reward_mab
         # ------------------
@@ -371,14 +425,28 @@ for t in range(NUM_TIMESTEPS):
     snr_log_cl.append(avg_snr_cl)
 
     # --- DQL Experience Replay ---
-    next_positions = update_positions(t + 1); next_angles = compute_relative_angles(next_positions)
+    # Need to construct the NEXT state with 5 dimensions
+    next_positions, next_velocities = update_positions(t + 1) # Need velocity for next state
+    next_angles = compute_relative_angles(next_positions)
     next_norm_distances, _ = compute_distances(next_positions)
-    next_state_cl = np.array([[next_angles[i], snr_cl[i], next_norm_distances[i]] for i in range(NUM_UES)])
-    replay_buffer.append((state_cl, actions_cl, reward_cl, next_state_cl))
-    prev_snr_cl = snr_cl.copy()
+    next_norm_velocities = normalize_velocity(next_velocities)
+    norm_current_snr_cl = normalize_snr(snr_cl) # Use current SNR as "prev_snr" for next state
+    current_blocked_float = current_is_blocked.astype(float) # Use current blockage as "prev_block" for next state
 
-    # --- Update Blockage State for Next Timestep ---
-    prev_is_blocked = current_is_blocked.copy() # Store current blockage for next step's calculation
+    next_state_cl = np.array([[
+        next_angles[i],
+        norm_current_snr_cl[i],
+        next_norm_distances[i],
+        next_norm_velocities[i],
+        current_blocked_float[i]
+    ] for i in range(NUM_UES)])
+
+    replay_buffer.append((state_cl, actions_cl, reward_cl, next_state_cl)) # Store 5D states
+    prev_snr_cl = snr_cl.copy() # Keep unnormalized SNR for reward calculation
+
+    # --- Update Blockage and Position State for Next Timestep ---
+    prev_is_blocked = current_is_blocked.copy()
+    # prev_positions is updated inside update_positions now
     # ---------------------------------------------
 
     # Train DQL Network
@@ -401,16 +469,20 @@ results_angle_heuristic_eval = {"latency": [], "throughput": [], "energy": [], "
 results_mab_ucb_eval = {"latency": [], "throughput": [], "energy": [], "accuracy": []}
 snr_log_cl_eval = []; snr_log_angle_heuristic_eval = []; snr_log_mab_ucb_eval = []
 prev_snr_cl_eval = prev_snr_cl.copy()
-# --- Re-initialize blockage state for evaluation ---
-prev_is_blocked_eval = np.zeros(NUM_UES, dtype=bool) # Start evaluation with no blockage history
-# -------------------------------------------------
+prev_is_blocked_eval = prev_is_blocked.copy() # Carry over last blockage state? Or reset? Let's reset.
+prev_is_blocked_eval = np.zeros(NUM_UES, dtype=bool)
+# Need previous positions for eval velocity calculation
+prev_positions_eval = global_prev_positions.copy() # Use the last positions from training
 
 for t_eval in range(EVAL_TIMESTEPS):
     t = NUM_TIMESTEPS + t_eval
 
     # 1. Environment Update
-    positions = update_positions(t); angles = compute_relative_angles(positions)
-    norm_distances, actual_distances = compute_distances(positions); h_channel = generate_channel(positions)
+    positions, velocities = update_positions(t) # Get current positions and velocities
+    angles = compute_relative_angles(positions)
+    norm_distances, actual_distances = compute_distances(positions)
+    h_channel = generate_channel(positions)
+    norm_velocities = normalize_velocity(velocities) # Normalize velocities
 
     # --- Time-Correlated Blockage Calculation (Eval) ---
     heuristic_beam_indices = np.zeros(NUM_UES, dtype=int)
@@ -425,7 +497,19 @@ for t_eval in range(EVAL_TIMESTEPS):
     # --- Calculate SNRs for ALL methods considering blockage (Eval) ---
     snr_cl = np.zeros(NUM_UES); snr_heuristic = np.zeros(NUM_UES); snr_mab = np.zeros(NUM_UES)
     actions_cl = np.zeros(NUM_UES, dtype=int); actions_mab = np.zeros(NUM_UES, dtype=int)
-    state_cl = np.array([[angles[i], prev_snr_cl_eval[i], norm_distances[i]] for i in range(NUM_UES)])
+
+    # --- Construct DRL State for Eval (5 dimensions) ---
+    norm_prev_snr_cl_eval = normalize_snr(prev_snr_cl_eval)
+    prev_blocked_eval_float = prev_is_blocked_eval.astype(float)
+    # Use current velocity and previous blockage for current state
+    state_cl = np.array([[
+        angles[i],
+        norm_prev_snr_cl_eval[i],
+        norm_distances[i],
+        norm_velocities[i],
+        prev_blocked_eval_float[i]
+    ] for i in range(NUM_UES)])
+    # ----------------------------------------------------
 
     for i in range(NUM_UES):
         action_h = heuristic_beam_indices[i]
@@ -436,7 +520,9 @@ for t_eval in range(EVAL_TIMESTEPS):
         mean_rewards[valid_indices] = np.divide(mab_values[i, valid_indices], counts_i[valid_indices]); actions_mab[i] = np.argmax(mean_rewards)
         action_mab = actions_mab[i]
         # DQL (Exploitation)
-        with torch.no_grad(): state_tensor_i = torch.tensor(state_cl[i], dtype=torch.float32).unsqueeze(0).to(device); actions_cl[i] = q_network(state_tensor_i).argmax().item()
+        with torch.no_grad():
+             state_tensor_i = torch.tensor(state_cl[i], dtype=torch.float32).unsqueeze(0).to(device)
+             actions_cl[i] = q_network(state_tensor_i).argmax().item()
         action_cl = actions_cl[i]
 
         # Determine attenuation based on CURRENT eval blockage state
@@ -468,8 +554,9 @@ for t_eval in range(EVAL_TIMESTEPS):
     results_cl_eval["energy"].append(avg_energy_cl); results_cl_eval["accuracy"].append(accuracy_cl)
     snr_log_cl_eval.append(avg_snr_cl)
 
-    # --- Update Blockage State for Next Eval Timestep ---
-    prev_is_blocked_eval = current_is_blocked_eval.copy() # Update eval blockage state
+    # --- Update Blockage and Position State for Next Eval Timestep ---
+    prev_is_blocked_eval = current_is_blocked_eval.copy()
+    prev_positions_eval = positions.copy() # Update previous positions for next velocity calc
     # --------------------------------------------------
     prev_snr_cl_eval = snr_cl.copy()
 
@@ -506,11 +593,11 @@ plt.plot(eval_range, snr_log_angle_heuristic_eval, linestyle="--", color=color_h
 plt.plot(eval_range, snr_log_mab_ucb_eval, label="MAB UCB1 Avg SNR (Eval)", color=color_mab, linestyle=":", linewidth=1.5)
 plt.xlabel("Timestep"); plt.ylabel("Average SNR (dB)"); plt.title("Average SNR Comparison")
 plt.legend(fontsize='small'); plt.grid(True, linestyle=':', alpha=0.6)
-plt.suptitle("Online Learning Beam Switching Performance Comparison (Time-Correlated Blockage)", fontsize=16, y=1.02) # Updated title
+plt.suptitle("Online Learning Beam Switching Performance Comparison (Correlated Blockage, Enhanced State)", fontsize=16, y=1.02) # Updated title
 plt.tight_layout(rect=[0, 0, 1, 1])
 try:
-    plt.savefig("results_comparison_correlated_blockage.png", dpi=300, bbox_inches='tight') # Updated filename
-    print("Results plot saved to results_comparison_correlated_blockage.png")
+    plt.savefig("results_comparison_enhanced_state.png", dpi=300, bbox_inches='tight') # Updated filename
+    print("Results plot saved to results_comparison_enhanced_state.png")
 except Exception as e: print(f"Error saving plot: {e}")
 # plt.show()
 
