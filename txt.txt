@@ -1,0 +1,543 @@
+
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Run 5 - TS 200/10000, Eps: 0.819, Beta: 0.408, Loss: 0.0000, SNR: 43.48 dB
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 0/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 0 samples (expected 64). Skipping training.
+Warning: Could only sample 1/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 1 samples (expected 64). Skipping training.
+Warning: Could only sample 2/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 2 samples (expected 64). Skipping training.
+Warning: Could only sample 3/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 3 samples (expected 64). Skipping training.
+Warning: Could only sample 4/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 4 samples (expected 64). Skipping training.
+Warning: Could only sample 5/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 5 samples (expected 64). Skipping training.
+Warning: Could only sample 5/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 5 samples (expected 64). Skipping training.
+Warning: Could only sample 7/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 7 samples (expected 64). Skipping training.
+Warning: Could only sample 8/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 8 samples (expected 64). Skipping training.
+Warning: Could only sample 9/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 9 samples (expected 64). Skipping training.
+Warning: Could only sample 9/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 9 samples (expected 64). Skipping training.
+Warning: Could only sample 9/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 9 samples (expected 64). Skipping training.
+Warning: Could only sample 11/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 11 samples (expected 64). Skipping training.
+Warning: Could only sample 12/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 12 samples (expected 64). Skipping training.
+Warning: Could only sample 13/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 13 samples (expected 64). Skipping training.
+Warning: Could only sample 14/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 14 samples (expected 64). Skipping training.
+Warning: Could only sample 14/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 14 samples (expected 64). Skipping training.
+Warning: Could only sample 15/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 15 samples (expected 64). Skipping training.
+Warning: Could only sample 15/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 15 samples (expected 64). Skipping training.
+Warning: Could only sample 18/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 18 samples (expected 64). Skipping training.
+Warning: Could only sample 19/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 19 samples (expected 64). Skipping training.
+Warning: Could only sample 19/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 19 samples (expected 64). Skipping training.
+Warning: Could only sample 19/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 19 samples (expected 64). Skipping training.
+Warning: Could only sample 19/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 19 samples (expected 64). Skipping training.
+Warning: Could only sample 22/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 22 samples (expected 64). Skipping training.
+Warning: Could only sample 21/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 21 samples (expected 64). Skipping training.
+Warning: Could only sample 20/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 20 samples (expected 64). Skipping training.
+Warning: Could only sample 25/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 25 samples (expected 64). Skipping training.
+Warning: Could only sample 26/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 26 samples (expected 64). Skipping training.
+Warning: Could only sample 25/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 25 samples (expected 64). Skipping training.
+Warning: Could only sample 27/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 27 samples (expected 64). Skipping training.
+Warning: Could only sample 28/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 28 samples (expected 64). Skipping training.
+Warning: Could only sample 29/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 29 samples (expected 64). Skipping training.
+Warning: Could only sample 32/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 32 samples (expected 64). Skipping training.
+Warning: Could only sample 31/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 31 samples (expected 64). Skipping training.
+Warning: Could only sample 33/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 33 samples (expected 64). Skipping training.
+Warning: Could only sample 31/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 31 samples (expected 64). Skipping training.
+Warning: Could only sample 34/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 34 samples (expected 64). Skipping training.
+Warning: Could only sample 29/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 29 samples (expected 64). Skipping training.
+Warning: Could only sample 30/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 30 samples (expected 64). Skipping training.
+Warning: Could only sample 33/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 33 samples (expected 64). Skipping training.
+Warning: Could only sample 34/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 34 samples (expected 64). Skipping training.
+Warning: Could only sample 38/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 38 samples (expected 64). Skipping training.
+Warning: Could only sample 37/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 37 samples (expected 64). Skipping training.
+Warning: Could only sample 42/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 42 samples (expected 64). Skipping training.
+Warning: Could only sample 38/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 38 samples (expected 64). Skipping training.
+Warning: Could only sample 42/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 42 samples (expected 64). Skipping training.
+Warning: Could only sample 43/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 43 samples (expected 64). Skipping training.
+Warning: Could only sample 44/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 44 samples (expected 64). Skipping training.
+Warning: Could only sample 45/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 45 samples (expected 64). Skipping training.
+Warning: Could only sample 44/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 44 samples (expected 64). Skipping training.
+Warning: Could only sample 43/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 43 samples (expected 64). Skipping training.
+Warning: Could only sample 46/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 46 samples (expected 64). Skipping training.
+Warning: Could only sample 49/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 49 samples (expected 64). Skipping training.
+Warning: Could only sample 48/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 48 samples (expected 64). Skipping training.
+Warning: Could only sample 50/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 50 samples (expected 64). Skipping training.
+Warning: Could only sample 49/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 49 samples (expected 64). Skipping training.
+Warning: Could only sample 50/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 50 samples (expected 64). Skipping training.
+Warning: Could only sample 48/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 48 samples (expected 64). Skipping training.
+Warning: Could only sample 52/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 52 samples (expected 64). Skipping training.
+Warning: Could only sample 53/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 53 samples (expected 64). Skipping training.
+Warning: Could only sample 52/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 52 samples (expected 64). Skipping training.
+Warning: Could only sample 53/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 53 samples (expected 64). Skipping training.
+Warning: Could only sample 53/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 53 samples (expected 64). Skipping training.
+Warning: Could only sample 56/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 56 samples (expected 64). Skipping training.
+Warning: Could only sample 59/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 59 samples (expected 64). Skipping training.
+Warning: Could only sample 55/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 55 samples (expected 64). Skipping training.
+Warning: Could only sample 58/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 58 samples (expected 64). Skipping training.
+Warning: Could only sample 61/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 61 samples (expected 64). Skipping training.
+Warning: Could only sample 59/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 59 samples (expected 64). Skipping training.
+Warning: Could only sample 63/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 63 samples (expected 64). Skipping training.
+Warning: Could only sample 62/64 unique valid entries after 640 attempts.
+Warning: PER sampling returned 62 samples (expected 64). Skipping training.
+Run 5 - TS 400/10000, Eps: 0.671, Beta: 0.420, Loss: 1.3461, SNR: 37.45 dB
+Run 5 - TS 600/10000, Eps: 0.549, Beta: 0.432, Loss: 0.4884, SNR: 28.09 dB
+Run 5 - TS 800/10000, Eps: 0.450, Beta: 0.444, Loss: 0.2082, SNR: 30.19 dB
+Run 5 - TS 1000/10000, Eps: 0.368, Beta: 0.456, Loss: 0.3115, SNR: 20.87 dB
+Run 5 - TS 1200/10000, Eps: 0.301, Beta: 0.468, Loss: 0.4858, SNR: 24.41 dB
+Run 5 - TS 1400/10000, Eps: 0.247, Beta: 0.480, Loss: 0.3976, SNR: 24.05 dB
+Run 5 - TS 1600/10000, Eps: 0.202, Beta: 0.492, Loss: 0.6073, SNR: 22.80 dB
+Run 5 - TS 1800/10000, Eps: 0.165, Beta: 0.504, Loss: 0.5265, SNR: 19.72 dB
+Run 5 - TS 2000/10000, Eps: 0.135, Beta: 0.516, Loss: 0.7572, SNR: 16.87 dB
+Run 5 - TS 2200/10000, Eps: 0.111, Beta: 0.528, Loss: 0.6792, SNR: 19.29 dB
+Run 5 - TS 2400/10000, Eps: 0.100, Beta: 0.540, Loss: 0.5743, SNR: 15.33 dB
+Run 5 - TS 2600/10000, Eps: 0.100, Beta: 0.552, Loss: 0.6420, SNR: 18.93 dB
+Run 5 - TS 2800/10000, Eps: 0.100, Beta: 0.564, Loss: 0.5875, SNR: 12.38 dB
+Run 5 - TS 3000/10000, Eps: 0.100, Beta: 0.576, Loss: 0.5865, SNR: 13.43 dB
+Run 5 - TS 3200/10000, Eps: 0.100, Beta: 0.588, Loss: 0.6567, SNR: 17.52 dB
+Run 5 - TS 3400/10000, Eps: 0.100, Beta: 0.600, Loss: 0.4543, SNR: 9.84 dB
+Run 5 - TS 3600/10000, Eps: 0.100, Beta: 0.612, Loss: 0.4533, SNR: 13.41 dB
+Run 5 - TS 3800/10000, Eps: 0.100, Beta: 0.624, Loss: 0.4425, SNR: 15.87 dB
+Run 5 - TS 4000/10000, Eps: 0.100, Beta: 0.636, Loss: 0.4714, SNR: 11.84 dB
+Run 5 - TS 4200/10000, Eps: 0.100, Beta: 0.648, Loss: 0.4084, SNR: 14.40 dB
+Run 5 - TS 4400/10000, Eps: 0.100, Beta: 0.660, Loss: 0.3904, SNR: 13.18 dB
+Run 5 - TS 4600/10000, Eps: 0.100, Beta: 0.672, Loss: 0.3678, SNR: 14.31 dB
+Run 5 - TS 4800/10000, Eps: 0.100, Beta: 0.684, Loss: 0.3304, SNR: 13.92 dB
+Run 5 - TS 5000/10000, Eps: 0.100, Beta: 0.696, Loss: 0.3651, SNR: 9.21 dB
+Run 5 - TS 5200/10000, Eps: 0.100, Beta: 0.708, Loss: 0.3197, SNR: 10.36 dB
+Run 5 - TS 5400/10000, Eps: 0.100, Beta: 0.720, Loss: 0.2227, SNR: 7.32 dB
+Run 5 - TS 5600/10000, Eps: 0.100, Beta: 0.732, Loss: 0.3794, SNR: 8.66 dB
+Run 5 - TS 5800/10000, Eps: 0.100, Beta: 0.744, Loss: 0.3803, SNR: 7.11 dB
+Run 5 - TS 6000/10000, Eps: 0.100, Beta: 0.756, Loss: 0.2658, SNR: 6.43 dB
+Run 5 - TS 6200/10000, Eps: 0.100, Beta: 0.768, Loss: 0.1618, SNR: 7.07 dB
+Run 5 - TS 6400/10000, Eps: 0.100, Beta: 0.780, Loss: 0.1806, SNR: 10.69 dB
+Run 5 - TS 6600/10000, Eps: 0.100, Beta: 0.792, Loss: 0.1178, SNR: 10.32 dB
+Run 5 - TS 6800/10000, Eps: 0.100, Beta: 0.804, Loss: 0.1320, SNR: 8.94 dB
+Run 5 - TS 7000/10000, Eps: 0.100, Beta: 0.816, Loss: 0.0947, SNR: 9.18 dB
+Run 5 - TS 7200/10000, Eps: 0.100, Beta: 0.828, Loss: 0.1250, SNR: 7.46 dB
+Run 5 - TS 7400/10000, Eps: 0.100, Beta: 0.840, Loss: 0.0643, SNR: 4.06 dB
+Run 5 - TS 7600/10000, Eps: 0.100, Beta: 0.852, Loss: 0.0935, SNR: 14.66 dB
+Run 5 - TS 7800/10000, Eps: 0.100, Beta: 0.864, Loss: 0.0770, SNR: 7.33 dB
+Run 5 - TS 8000/10000, Eps: 0.100, Beta: 0.876, Loss: 0.0502, SNR: 13.25 dB
+Run 5 - TS 8200/10000, Eps: 0.100, Beta: 0.888, Loss: 0.0445, SNR: 2.36 dB
+Run 5 - TS 8400/10000, Eps: 0.100, Beta: 0.900, Loss: 0.0549, SNR: 6.79 dB
+Run 5 - TS 8600/10000, Eps: 0.100, Beta: 0.912, Loss: 0.0491, SNR: 6.03 dB
+Run 5 - TS 8800/10000, Eps: 0.100, Beta: 0.924, Loss: 0.0430, SNR: 7.05 dB
+Run 5 - TS 9000/10000, Eps: 0.100, Beta: 0.936, Loss: 0.0310, SNR: 10.34 dB
+Run 5 - TS 9200/10000, Eps: 0.100, Beta: 0.948, Loss: 0.0314, SNR: 4.52 dB
+Run 5 - TS 9400/10000, Eps: 0.100, Beta: 0.960, Loss: 0.0229, SNR: 12.19 dB
+Run 5 - TS 9600/10000, Eps: 0.100, Beta: 0.972, Loss: 0.0396, SNR: 15.03 dB
+Run 5 - TS 9800/10000, Eps: 0.100, Beta: 0.984, Loss: 0.0265, SNR: 11.36 dB
+Run 5 - TS 10000/10000, Eps: 0.100, Beta: 0.996, Loss: 0.0426, SNR: 7.33 dB
+--- Run 5: Training Phase Completed ---
+--- Run 5: Starting Evaluation Phase ---
+Run 5 - Eval TS 100/400, AvgSNR OL: 13.11 dB
+Run 5 - Eval TS 200/400, AvgSNR OL: 15.35 dB
+Run 5 - Eval TS 300/400, AvgSNR OL: 19.24 dB
+Run 5 - Eval TS 400/400, AvgSNR OL: 15.50 dB
+--- Run 5: Evaluation Phase Completed ---
+--- Run 5 finished in 94.00 seconds ---
+
+--- All 5 runs completed in 471.45 seconds ---
+--- Plotting Results (Last Run) ---
+Results plot saved to results_last_run_gru_per_eval_smoothed.png
+
+--- Average Metrics Across 5 Runs (Evaluation Phase Only) ---
+OL (GRU+PER) Results:
+  Avg Latency: 1.76 ± 0.02 ms (5 valid runs)
+  Avg Throughput: 522.43 ± 3.22 Mbps (5 valid runs)
+  Avg Energy: 6.57 ± 0.02 mJ (5 valid runs)
+  Avg Accuracy: 0.39 ± 0.00  (5 valid runs)
+  Avg Snr: 15.02 ± 0.12 dB (5 valid runs)
+Angle Heuristic Results:
+  Avg Latency: 2.49 ± 0.12 ms (5 valid runs)
+  Avg Throughput: 450.67 ± 12.04 Mbps (5 valid runs)
+  Avg Energy: 6.23 ± 0.05 mJ (5 valid runs)
+  Avg Accuracy: 0.34 ± 0.01  (5 valid runs)
+  Avg Snr: 10.68 ± 0.64 dB (5 valid runs)
+MAB UCB1 Results:
+  Avg Latency: 1.78 ± 0.07 ms (5 valid runs)
+  Avg Throughput: 520.60 ± 6.49 Mbps (5 valid runs)
+  Avg Energy: 6.56 ± 0.03 mJ (5 valid runs)
+  Avg Accuracy: 0.39 ± 0.01  (5 valid runs)
+  Avg Snr: 14.92 ± 0.23 dB (5 valid runs)
+
+--- Script Finished ---
+(beam_switching) tanglab@GPU-server:~/Desktop/CL-for-6G-$ ^C
+(beam_switching) tanglab@GPU-server:~/Desktop/CL-for(beam_switching
+(beam_switching) tanglab@GPU-server:~/Desktop/CL-for-6G-$ 
