@@ -1,0 +1,30 @@
+{
+    "name": "TensorFlow NGC (Sionna)",
+    // ایمیج داکر شما
+    "image": "nvcr.io/nvidia/tensorflow:24.04-tf2-py3",
+
+    // آپشن‌های زمان اجرا برای داکر
+    "runArgs": [
+        "--gpus=all",
+        "--shm-size=1g",
+        "--ulimit=memlock=-1"
+        // آپشن --user را اینجا نمی‌گذاریم تا VS Code مدیریت کند یا از پیش‌فرض استفاده کند
+    ],
+
+    // اتصال پوشه پروژه
+    // ${localWorkspaceFolder} به پوشه پروژه شما اشاره دارد
+    "mounts": [
+        "source=${localWorkspaceFolder},target=/workspace/${localWorkspaceFolderBasename},type=bind,consistency=cached"
+    ],
+    "workspaceFolder": "/workspace/${localWorkspaceFolderBasename}",
+
+    // کاربری که VS Code باید داخل کانتینر استفاده کند
+    // می‌توانید این خط را حذف کنید تا از پیش‌فرض کانتینر (احتمالا root) استفاده شود
+    // یا اگر کاربر خاصی در ایمیج هست (مثل 'nvidia' یا 'tf') آن را مشخص کنید
+    "remoteUser": "root",
+
+    // (اختیاری) دستوراتی که پس از ساخت کانتینر اجرا شوند
+    "postCreateCommand": "pip install --no-cache-dir sionna==0.19.2 torch matplotlib scipy pandas"
+
+    // تنظیمات دیگر ...
+}
