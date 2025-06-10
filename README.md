@@ -1,4 +1,4 @@
-# 🛰️ Online LearningAdaptive Beam Switching for 6G Networks
+# 🛰️ Online Learning Adaptive Beam Switching for 6G Networks
 
 Official implementation of:
 
